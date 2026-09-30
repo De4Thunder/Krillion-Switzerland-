@@ -687,7 +687,8 @@ function shareText(){
     `Check the full stats: ${url}`].join('\n');
 }
 $('shareBtn').addEventListener('click', () => {
-  const link = 'https://wa.me/?text=' + encodeURIComponent(shareText());
+  // Link straight to api.whatsapp.com: the wa.me redirect turns emoji into replacement characters on iPhone.
+  const link = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(shareText());
   const w = window.open(link, '_blank');
   if (!w) location.href = link;
 });
