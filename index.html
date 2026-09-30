@@ -107,6 +107,30 @@ textarea{resize:vertical;min-height:108px;line-height:1.15}
 .preview .bad{color:#ffb0c2}
 .preview .chip{display:inline-block;margin-right:12px}
 
+/* ---------- in-page diver picker ---------- */
+.picker{position:relative}
+.pick-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:10px 14px;
+  background:rgba(3,10,18,.75);border:2px solid #22394d;font-size:24px;text-align:left}
+.pick-btn[aria-expanded="true"]{border-color:var(--teal-dim);box-shadow:0 0 0 1px var(--teal-dim),0 0 12px rgba(92,225,240,.25)}
+.pick-btn .ph{color:#6f8aa0}
+.chev{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid var(--teal);transition:transform .15s steps(2)}
+.pick-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.pick-list{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;list-style:none;max-height:min(52vh,340px);overflow-y:auto;
+  background:#050d16;border:2px solid var(--teal-dim);box-shadow:0 0 18px rgba(92,225,240,.25),0 12px 30px rgba(0,0,0,.6);animation:drop .14s steps(3)}
+@keyframes drop{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+.pick-list li{display:flex;align-items:center;gap:12px;min-height:50px;padding:8px 14px;font-size:23px;cursor:pointer;border-bottom:1px dashed rgba(150,195,215,.14)}
+.pick-list li:last-child{border-bottom:0}
+.pick-list li .sw{width:10px;height:10px;flex:none}
+.pick-list li .ck{margin-left:auto;color:var(--teal);font-family:var(--lab);font-size:12px;letter-spacing:.2em}
+.pick-list li.active{background:rgba(92,225,240,.1)}
+.pick-list li[aria-selected="true"]{color:var(--teal)}
+.pick-list li.add{color:var(--pink);font-family:var(--lab);font-size:13px;letter-spacing:.2em}
+.bulk{list-style:none;margin-top:6px;font-size:19px}
+.bulk li{display:flex;gap:10px;align-items:baseline;padding:3px 0}
+.bulk li b{font-family:var(--lab);font-weight:400;font-size:12px;color:var(--teal);min-width:48px}
+.bulk li .old{color:var(--gold);font-size:16px}
+footer.ver{margin-top:28px;text-align:center;font-family:var(--lab);font-size:10px;letter-spacing:.3em;color:#4d6679}
+
 /* ---------- board ---------- */
 .day-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .day-nav .t{text-align:center}
@@ -210,15 +234,20 @@ nav.tabs button[aria-selected="true"]{color:var(--teal);border-color:#18303f;bac
     <h2 class="sec"><span>LOG YOUR DIVE</span></h2>
     <div class="panel stack">
       <div>
-        <label class="field" for="playerSel">DIVER</label>
-        <select id="playerSel"></select>
+        <span class="field" id="pickLbl">DIVER</span>
+        <div class="picker" id="picker">
+          <button type="button" class="pick-btn" id="pickBtn" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="pickLbl pickText">
+            <span id="pickText" class="ph">Who are you?</span><i class="chev" aria-hidden="true"></i>
+          </button>
+          <ul class="pick-list hidden" id="pickList" role="listbox" aria-labelledby="pickLbl" tabindex="-1"></ul>
+        </div>
       </div>
       <div class="add-row hidden" id="addRow">
         <input id="newName" maxlength="20" placeholder="Your name" autocomplete="nickname" enterkeyhint="done">
         <button class="btn teal" id="addBtn">Add</button>
       </div>
       <button class="btn teal wide" id="pasteBtn">📋 Paste result</button>
-      <textarea id="resultIn" rows="3" spellcheck="false" placeholder="Krillion #77 🦐&#10;370&#10;🏮🏮🫧🦑🦑🦑🫧" aria-label="Your Krillion result"></textarea>
+      <textarea id="resultIn" rows="3" spellcheck="false" placeholder="Krillion #77 🦐&#10;370&#10;🏮🏮🫧🦑🦑🦑🫧&#10;&#10;(one result, or several days at once)" aria-label="Your Krillion results"></textarea>
       <div class="preview" id="preview" aria-live="polite"></div>
       <button class="btn pink wide" id="submitBtn" disabled>Log my dive</button>
     </div>
@@ -256,6 +285,7 @@ nav.tabs button[aria-selected="true"]{color:var(--teal);border-color:#18303f;bac
     <div class="cards" id="cards"></div>
     <p class="note">Ranked by average score. A win needs at least 2 divers that day, ties share the win. A streak counts dives in a row.</p>
   </main>
+  <footer class="ver" id="ver"></footer>
 </div>
 
 <nav class="tabs" role="tablist" aria-label="Sections">
@@ -285,12 +315,13 @@ const firebaseConfig = {
 const SITE_URL = "";
 
 /* ===================================================================== */
+const APP_VERSION = "1.1";
 const FB_VER = "10.12.2";
 const PALETTE = ['#5ce1f0','#ff3d6e','#e3b341','#a58cff','#7ee787','#ff9f43','#f472b6','#60a5fa','#c3e88d','#ffd6a5'];
 const ME_KEY = 'krillion_me';
 const $ = id => document.getElementById(id);
 
-const state = { players: [], scores: [], viewDay: null, pinned: false, me: null, parsed: null, backend: null };
+const state = { players: [], scores: [], viewDay: null, pinned: false, me: null, parsed: [], backend: null, pick: '', adding: false };
 try { state.me = localStorage.getItem(ME_KEY); } catch {}
 
 /* ---------------- backends ---------------- */
@@ -374,6 +405,25 @@ function parseResult(raw){
   return {day, score, emoji, seq};
 }
 
+// Splits a paste into one chunk per "Krillion #N" header, so several days (or a WhatsApp copy) work too.
+function parseMany(raw){
+  const text = (raw || '').replace(/\r/g,'');
+  if (!text.trim()) return null;
+  const re = /krillion\s*#\s*\d{1,6}/gi, starts = [];
+  let m; while ((m = re.exec(text))) starts.push(m.index);
+  if (!starts.length) return {error: 'Paste the whole result, starting with "Krillion #".'};
+  const found = [], errors = [];
+  starts.forEach((st, i) => {
+    const p = parseResult(text.slice(st, starts[i + 1] ?? text.length));
+    if (!p || p.error) { errors.push(p?.error || 'Could not read one result.'); return; }
+    const twin = found.find(f => f.day === p.day);
+    if (!twin) found.push(p);
+    else if (twin.score !== p.score || twin.seq !== p.seq) errors.push(`Two different results for #${p.day}. Only paste your own dives.`);
+  });
+  if (errors.length) return {error: [...new Set(errors)][0]};
+  return {results: found.sort((a,b) => a.day - b.day)};
+}
+
 /* ---------------- derived data ---------------- */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => Number(n).toLocaleString('en-US');
@@ -430,16 +480,21 @@ function computeStats(){
 }
 
 /* ---------------- rendering ---------------- */
+function sortedPlayers(){ return [...state.players].sort((a,b) => a.name.localeCompare(b.name)); }
 function renderPlayers(){
-  const sel = $('playerSel');
-  const keep = sel.value;
-  const ps = [...state.players].sort((a,b) => a.name.localeCompare(b.name));
-  sel.innerHTML = `<option value="" disabled>Who are you?</option>` +
-    ps.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('') +
-    `<option value="__add">＋ Add me to the crew</option>`;
-  const want = state.adding ? '__add' : (state.me && playerById(state.me) ? state.me : (playerById(keep) ? keep : ''));
-  sel.value = ps.length ? want : '__add';
-  $('addRow').classList.toggle('hidden', sel.value !== '__add');
+  const ps = sortedPlayers();
+  if (!state.adding) {
+    if (state.me && playerById(state.me)) state.pick = state.me;
+    else if (!playerById(state.pick)) state.pick = '';
+  }
+  if (!ps.length) { state.pick = ''; state.adding = true; }
+  $('pickList').innerHTML = ps.map(p => `<li role="option" data-v="${esc(p.id)}" aria-selected="${p.id === state.pick}">
+      <i class="sw" style="background:${colorOf(p.id)}"></i><span>${esc(p.name)}</span>${p.id === state.me ? '<span class="ck">YOU</span>' : ''}</li>`).join('') +
+    `<li role="option" class="add" data-v="__add" aria-selected="false">＋ Add me to the crew</li>`;
+  const cur = playerById(state.pick);
+  $('pickText').textContent = state.adding ? 'New diver' : (cur ? cur.name : 'Who are you?');
+  $('pickText').className = cur && !state.adding ? '' : 'ph';
+  $('addRow').classList.toggle('hidden', !state.adding);
   updateSubmit();
 }
 
@@ -454,7 +509,7 @@ function renderHero(day){
     em.textContent = mine.emoji || '🦐';
     dep.textContent = `-${fmt(mine.score)}m`;
     line.textContent = rows.length === 1 ? 'FIRST IN THE WATER' :
-      mine.rank === 1 ? `DEEPEST OF ${rows.length} DIVERS` : `DEEPER THAN ${beaten} OF ${rows.length - 1} CREWMATES`;
+      mine.rank === 1 ? `DEEPEST OF ${rows.length} DIVERS` : beaten === 0 ? `SHALLOWEST OF ${rows.length} DIVERS` : `DEEPER THAN ${beaten} OF ${rows.length - 1} CREWMATES`;
   } else {
     const top = rows[0];
     big.textContent = top.score;
@@ -586,27 +641,63 @@ function renderAll(){
 
 /* ---------------- input flow ---------------- */
 function updatePreview(){
-  const p = parseResult($('resultIn').value);
-  state.parsed = p && !p.error ? p : null;
+  const r = parseMany($('resultIn').value);
+  state.parsed = r && r.results ? r.results : [];
   const pv = $('preview');
-  if (!p) pv.innerHTML = '';
-  else if (p.error) pv.innerHTML = `<span class="bad">${esc(p.error)}</span>`;
-  else pv.innerHTML = `<span class="ok"><span class="chip">Dive #${p.day}</span><span class="chip">${fmt(p.score)} ${esc(p.emoji)}</span></span><div>${esc(p.seq)}</div>`;
+  if (!r) pv.innerHTML = '';
+  else if (r.error) pv.innerHTML = `<span class="bad">${esc(r.error)}</span>`;
+  else if (state.parsed.length === 1) {
+    const p = state.parsed[0];
+    pv.innerHTML = `<span class="ok"><span class="chip">Dive #${p.day}</span><span class="chip">${fmt(p.score)} ${esc(p.emoji)}</span></span><div>${esc(p.seq)}</div>`;
+  } else {
+    const pid = state.pick;
+    pv.innerHTML = `<span class="ok">${state.parsed.length} dives found</span><ul class="bulk">` + state.parsed.map(p => {
+      const old = state.scores.find(s => s.id === `${p.day}_${pid}`);
+      return `<li><b>#${p.day}</b><span>${fmt(p.score)} ${esc(p.emoji)}</span><span>${esc(p.seq)}</span>${old && old.score !== p.score ? `<span class="old">(was ${old.score})</span>` : ''}</li>`;
+    }).join('') + '</ul>';
+  }
+  $('submitBtn').textContent = state.parsed.length > 1 ? `Log ${state.parsed.length} dives` : 'Log my dive';
   updateSubmit();
 }
 function updateSubmit(){
-  const v = $('playerSel').value;
-  $('submitBtn').disabled = !(state.parsed && v && v !== '__add');
+  $('submitBtn').disabled = !(state.parsed.length && playerById(state.pick) && !state.adding);
 }
 
-$('playerSel').addEventListener('change', e => {
-  const v = e.target.value;
-  $('addRow').classList.toggle('hidden', v !== '__add');
-  state.adding = v === '__add';
-  if (v === '__add') { setTimeout(() => $('newName').focus(), 50); }
-  else { state.me = v; try { localStorage.setItem(ME_KEY, v); } catch {} renderAll(); }
-  updateSubmit();
+/* in-page picker behaviour */
+function openPicker(open){
+  $('pickList').classList.toggle('hidden', !open);
+  $('pickBtn').setAttribute('aria-expanded', String(open));
+  if (open) {
+    const items = [...$('pickList').querySelectorAll('li')];
+    items.forEach(li => li.classList.remove('active'));
+    (items.find(li => li.getAttribute('aria-selected') === 'true') || items[0])?.classList.add('active');
+    $('pickList').focus({preventScroll: true});
+  }
+}
+function choose(v){
+  openPicker(false);
+  if (v === '__add') {
+    state.adding = true; renderPlayers();
+    setTimeout(() => $('newName').focus(), 50);
+  } else {
+    state.adding = false; state.pick = v; state.me = v;
+    try { localStorage.setItem(ME_KEY, v); } catch {}
+    renderPlayers(); renderAll(); updatePreview();
+  }
+}
+$('pickBtn').addEventListener('click', () => openPicker($('pickList').classList.contains('hidden')));
+$('pickList').addEventListener('click', e => { const li = e.target.closest('li[data-v]'); if (li) choose(li.dataset.v); });
+$('pickList').addEventListener('keydown', e => {
+  const items = [...$('pickList').querySelectorAll('li')];
+  let i = items.findIndex(li => li.classList.contains('active'));
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    i = e.key === 'ArrowDown' ? Math.min(items.length - 1, i + 1) : Math.max(0, i - 1);
+    items.forEach(li => li.classList.remove('active')); items[i].classList.add('active'); items[i].scrollIntoView({block: 'nearest'});
+  } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (items[i]) choose(items[i].dataset.v); }
+  else if (e.key === 'Escape') { openPicker(false); $('pickBtn').focus(); }
 });
+document.addEventListener('click', e => { if (!$('picker').contains(e.target)) openPicker(false); });
 
 async function addMe(){
   const name = $('newName').value.trim().replace(/\s+/g, ' ');
@@ -616,14 +707,11 @@ async function addMe(){
   try {
     if (!id) id = await state.backend.addPlayer(name);
   } catch (e) { console.error(e); toast('Could not add you. Check the connection.', true); return; }
-  state.me = id; try { localStorage.setItem(ME_KEY, id); } catch {}
+  state.me = id; state.pick = id; state.adding = false;
+  try { localStorage.setItem(ME_KEY, id); } catch {}
   $('newName').value = '';
-  state.adding = false;
-  $('addRow').classList.add('hidden');
   toast(existing ? `Welcome back, ${name}` : `${name} joined the crew`);
-  renderPlayers();
-  $('playerSel').value = id;
-  updateSubmit(); renderAll();
+  renderPlayers(); renderAll(); updatePreview();
 }
 $('addBtn').addEventListener('click', addMe);
 $('newName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addMe(); } });
@@ -633,7 +721,7 @@ $('pasteBtn').addEventListener('click', async () => {
     const t = await navigator.clipboard.readText();
     if (!t) { toast('Clipboard is empty. Copy your result in Krillion first.', true); return; }
     $('resultIn').value = t; updatePreview();
-    if (!state.parsed) toast('That does not look like a Krillion result.', true);
+    if (!state.parsed.length) toast('That does not look like a Krillion result.', true);
   } catch {
     $('resultIn').focus();
     toast('Long-press the box and tap Paste.', true);
@@ -642,19 +730,22 @@ $('pasteBtn').addEventListener('click', async () => {
 $('resultIn').addEventListener('input', updatePreview);
 
 $('submitBtn').addEventListener('click', async () => {
-  const p = state.parsed, pid = $('playerSel').value;
+  const list = state.parsed, pid = state.pick;
   const player = playerById(pid);
-  if (!p || !player) return;
-  const id = `${p.day}_${pid}`;
-  const old = state.scores.find(s => s.id === id);
-  if (old && old.score !== p.score && !confirm(`You already logged ${old.score} for dive #${p.day}. Replace it with ${p.score}?`)) return;
+  if (!list.length || !player) return;
+  const changed = list.filter(p => { const o = state.scores.find(s => s.id === `${p.day}_${pid}`); return o && o.score !== p.score; });
+  if (changed.length) {
+    const msg = list.length === 1
+      ? `You already logged ${state.scores.find(s => s.id === `${list[0].day}_${pid}`).score} for dive #${list[0].day}. Replace it with ${list[0].score}?`
+      : `${changed.length} of these dives already have a different score logged. Replace them?`;
+    if (!confirm(msg)) return;
+  }
   $('submitBtn').disabled = true;
   try {
-    await state.backend.saveScore({id, day: p.day, score: p.score, emoji: p.emoji, seq: p.seq, playerId: pid, playerName: player.name, ts: Date.now()});
-    state.me = pid; try { localStorage.setItem(ME_KEY, pid); } catch {}
+    await Promise.all(list.map(p => state.backend.saveScore({id: `${p.day}_${pid}`, day: p.day, score: p.score, emoji: p.emoji, seq: p.seq, playerId: pid, playerName: player.name, ts: Date.now()})));
     state.pinned = false;
     $('resultIn').value = ''; updatePreview();
-    toast(`Dive #${p.day} logged ${p.emoji}`);
+    toast(list.length === 1 ? `Dive #${list[0].day} logged ${list[0].emoji}` : `${list.length} dives logged 🦐`);
     renderAll();
     $('boardAnchor').scrollIntoView({behavior: 'smooth', block: 'start'});
   } catch (e) { console.error(e); toast('Could not log the dive. Check the connection.', true); updateSubmit(); }
@@ -686,9 +777,13 @@ function shareText(){
     ...rows.map(r => `${medal(r.rank)} ${nameOf(r)}: ${r.score} ${r.emoji || '🦐'}`),
     `Check the full stats: ${url}`].join('\n');
 }
+// Phones: open the WhatsApp app directly (whatsapp:// keeps emoji intact and works on iPhone and Android).
+// Computers: WhatsApp's web link. wa.me is avoided because its redirect breaks emoji.
+const IS_PHONE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 $('shareBtn').addEventListener('click', () => {
-  // Link straight to api.whatsapp.com: the wa.me redirect turns emoji into replacement characters on iPhone.
-  const link = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(shareText());
+  const text = encodeURIComponent(shareText());
+  if (IS_PHONE) { location.href = 'whatsapp://send?text=' + text; return; }
+  const link = 'https://api.whatsapp.com/send?text=' + text;
   const w = window.open(link, '_blank');
   if (!w) location.href = link;
 });
@@ -750,12 +845,13 @@ function fauna(){
 /* ---------------- boot ---------------- */
 (async function boot(){
   fauna();
+  $('ver').textContent = `KRILLION CREW V${APP_VERSION}`;
   const demo = !firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('YOUR_');
   if (demo) {
     state.backend = localBackend();
     setStatus('demo', 'DEMO');
     $('demoBar').classList.remove('hidden');
-    $('seedBtn').onclick = () => { state.backend.seed(); state.me = 'demo0'; try { localStorage.setItem(ME_KEY, 'demo0'); } catch {} renderPlayers(); renderAll(); toast('Sample dives loaded'); };
+    $('seedBtn').onclick = () => { state.backend.seed(); state.me = 'demo0'; state.adding = false; try { localStorage.setItem(ME_KEY, 'demo0'); } catch {} renderPlayers(); renderAll(); toast('Sample dives loaded'); };
     $('wipeBtn').onclick = () => { if (confirm('Clear all demo data on this device?')) { state.backend.wipe(); toast('Demo data cleared'); } };
   } else {
     try { state.backend = await firebaseBackend(firebaseConfig); }
