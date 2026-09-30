@@ -4,8 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#1a2d40">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Krillion">
 <title>Krillion Crew | Daily Dive Log</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦐</text></svg>">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen&family=VT323&display=swap" rel="stylesheet">
@@ -22,6 +28,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
 body{min-height:100vh;color:var(--text);font-family:var(--mono);font-size:21px;line-height:1.2;background:var(--bg2);overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+body.locked{overflow:hidden}
 button,select,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px dashed var(--teal);outline-offset:3px}
@@ -32,8 +39,7 @@ button{cursor:pointer}
   background:
     radial-gradient(circle at 86% 30%, rgba(227,179,65,.22) 0 7%, rgba(227,179,65,.06) 14%, transparent 22%),
     linear-gradient(180deg,var(--bg0) 0%,var(--bg1) 32%,var(--bg2) 64%,var(--bg3) 100%)}
-.scan{position:fixed;inset:0;z-index:50;pointer-events:none;
-  background:repeating-linear-gradient(180deg,rgba(0,0,0,.09) 0 1px,transparent 1px 3px)}
+.scan{position:fixed;inset:0;z-index:50;pointer-events:none;background:repeating-linear-gradient(180deg,rgba(0,0,0,.09) 0 1px,transparent 1px 3px)}
 .fauna{position:fixed;inset:0;z-index:-2;pointer-events:none;overflow:hidden}
 .fish{position:absolute;left:-60px;opacity:.5;animation:swim linear infinite}
 .fish svg{display:block;shape-rendering:crispEdges}
@@ -42,23 +48,27 @@ button{cursor:pointer}
 @keyframes swimRev{from{transform:translateX(calc(100vw + 120px)) scaleX(-1)}to{transform:translateX(-80px) scaleX(-1)}}
 .bub{position:absolute;bottom:-12px;border:1px solid rgba(140,220,240,.35);border-radius:50%;animation:rise linear infinite}
 @keyframes rise{to{transform:translateY(-110vh)}}
+body.still .fauna{display:none}
+body.still *{animation:none!important}
 
 /* ---------- layout ---------- */
 .wrap{max-width:560px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 96px)}
-header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:6px}
 .logo{font-family:var(--pix);font-size:20px;color:#e6fbff;letter-spacing:1px;
   text-shadow:-2px 0 var(--pink),2px 0 var(--teal),0 0 14px rgba(92,225,240,.45);animation:glitch 6s steps(1) infinite}
-.logo small{display:block;font-family:var(--lab);font-size:11px;letter-spacing:.45em;color:var(--muted);text-shadow:none;margin-top:6px}
+.logo small{display:block;font-family:var(--lab);font-size:11px;letter-spacing:.4em;color:var(--muted);text-shadow:none;margin-top:6px;max-width:62vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @keyframes glitch{0%,92%,100%{text-shadow:-2px 0 var(--pink),2px 0 var(--teal),0 0 14px rgba(92,225,240,.45)}
   93%{text-shadow:-5px 1px var(--pink),4px -1px var(--teal),0 0 14px rgba(92,225,240,.45)}
   95%{text-shadow:3px 0 var(--pink),-3px 0 var(--teal),0 0 14px rgba(92,225,240,.45)}}
+.top-r{display:flex;align-items:center;gap:10px}
+.gear{width:44px;height:44px;border:2px solid #0a1622;background:rgba(10,24,38,.9);color:var(--text);font-size:22px;line-height:1}
 .status{font-family:var(--lab);font-size:12px;letter-spacing:.3em;text-align:right;color:var(--text)}
 .status .dot{display:inline-block;width:8px;height:8px;margin-right:6px;background:var(--muted);vertical-align:1px}
 .status.live .dot{background:var(--teal);box-shadow:0 0 8px var(--teal)}
 .status.demo .dot{background:var(--pink);box-shadow:0 0 8px var(--pink)}
 .status.err .dot{background:var(--gold)}
-
-.demo-bar{margin:10px 0 4px;padding:10px 12px;border:2px dashed rgba(255,61,110,.55);background:rgba(255,61,110,.07);font-size:18px;color:#ffc2d0}
+.demo-bar,.alert{margin:10px 0 4px;padding:10px 12px;border:2px dashed rgba(255,61,110,.55);background:rgba(255,61,110,.07);font-size:18px;color:#ffc2d0}
+.alert{border-color:rgba(227,179,65,.6);background:rgba(227,179,65,.08);color:#f3dca0}
 .demo-bar .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 
 /* ---------- hero ---------- */
@@ -66,29 +76,27 @@ header.top{display:flex;align-items:center;justify-content:space-between;gap:12p
 .wm{position:absolute;left:50%;top:78px;transform:translateX(-50%);font-family:var(--pix);font-size:clamp(34px,11vw,56px);
   color:rgba(255,61,110,.14);text-shadow:3px 0 rgba(92,225,240,.08);white-space:nowrap;pointer-events:none;letter-spacing:2px}
 .hero-top{position:relative;display:flex;justify-content:space-between;align-items:flex-start}
-.big{font-family:var(--pix);font-size:clamp(46px,15vw,72px);line-height:1;color:#f4fbff;
-  text-shadow:4px 4px 0 rgba(0,0,0,.35),0 0 18px rgba(233,242,246,.15)}
-.shrimp{font-size:52px;line-height:1;filter:drop-shadow(0 0 10px var(--red)) drop-shadow(0 0 22px rgba(255,42,85,.55));animation:bob 3.2s ease-in-out infinite}
+.big{font-family:var(--pix);font-size:clamp(46px,15vw,72px);line-height:1;color:#f4fbff;text-shadow:4px 4px 0 rgba(0,0,0,.35),0 0 18px rgba(233,242,246,.15)}
+.shrimp{position:relative;font-size:52px;line-height:1;filter:drop-shadow(0 0 10px var(--red)) drop-shadow(0 0 22px rgba(255,42,85,.55));animation:bob 3.2s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(-6px) rotate(-4deg)}}
 .depth{position:relative;font-family:var(--lab);font-size:15px;color:var(--teal);margin:10px 0 0 4px;text-shadow:0 0 8px rgba(92,225,240,.6)}
 .hero-line{position:relative;margin-top:26px;font-family:var(--lab);font-size:14px;letter-spacing:.28em;color:var(--teal);text-shadow:0 0 10px rgba(92,225,240,.55)}
+.burst{position:fixed;width:10px;height:10px;border:2px solid var(--teal);border-radius:50%;pointer-events:none;z-index:65;animation:burst 1.3s ease-out forwards}
+@keyframes burst{to{transform:translate(var(--dx),var(--dy)) scale(.4);opacity:0}}
 
 /* ---------- sections ---------- */
 .sec{display:flex;align-items:center;gap:12px;font-family:var(--lab);font-weight:400;font-size:14px;letter-spacing:.3em;margin:30px 0 14px}
 .sec::after{content:"";flex:1;border-top:2px dashed var(--line)}
-.sec em{font-style:normal;color:var(--muted)}
+.sec.sm{margin:18px 0 10px;font-size:12px}
 .panel{background:var(--panel);border:2px solid var(--edge);box-shadow:inset 0 0 0 1px rgba(150,195,215,.08);padding:14px}
-
 .field{display:block;font-family:var(--lab);font-size:12px;letter-spacing:.25em;color:var(--muted);margin:0 0 6px}
-select,input,textarea{width:100%;background:rgba(3,10,18,.75);border:2px solid #22394d;padding:10px 12px;font-size:22px;color:var(--text);border-radius:0;-webkit-appearance:none;appearance:none}
-select{background-image:linear-gradient(45deg,transparent 50%,var(--teal) 50%),linear-gradient(135deg,var(--teal) 50%,transparent 50%);
-  background-position:calc(100% - 20px) 50%,calc(100% - 13px) 50%;background-size:7px 7px;background-repeat:no-repeat;padding-right:38px}
-select:focus,input:focus,textarea:focus{border-color:var(--teal-dim);outline:none;box-shadow:0 0 0 1px var(--teal-dim),0 0 12px rgba(92,225,240,.25)}
+input,textarea{width:100%;background:rgba(3,10,18,.75);border:2px solid #22394d;padding:10px 12px;font-size:22px;color:var(--text);border-radius:0;-webkit-appearance:none;appearance:none}
+input:focus,textarea:focus{border-color:var(--teal-dim);outline:none;box-shadow:0 0 0 1px var(--teal-dim),0 0 12px rgba(92,225,240,.25)}
 textarea{resize:vertical;min-height:108px;line-height:1.15}
 ::placeholder{color:#557085}
 .stack>*+*{margin-top:12px}
-.add-row{display:flex;gap:8px}
-.add-row input{flex:1;min-width:0}
+.add-row,.row-in{display:flex;gap:8px}
+.add-row input,.row-in input{flex:1;min-width:0}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:48px;padding:10px 16px;border:2px solid currentColor;background:rgba(3,10,18,.7);
   font-family:var(--lab);font-size:14px;letter-spacing:.2em;text-transform:uppercase;transition:transform .06s}
@@ -98,64 +106,77 @@ textarea{resize:vertical;min-height:108px;line-height:1.15}
 .btn.teal{color:var(--teal);box-shadow:0 0 12px rgba(92,225,240,.25),inset 0 0 10px rgba(92,225,240,.12)}
 .btn.pink{color:var(--pink);box-shadow:0 0 14px rgba(255,61,110,.35),inset 0 0 12px rgba(255,61,110,.15)}
 .btn.wa{color:var(--green);box-shadow:0 0 14px rgba(70,224,138,.3),inset 0 0 12px rgba(70,224,138,.12)}
+.btn.gold{color:var(--gold)}
 .btn.ghost{color:var(--muted);min-height:40px;font-size:12px}
+.btn.sm{min-height:38px;padding:6px 10px;font-size:11px;letter-spacing:.15em}
 .btn-row{display:flex;gap:10px}
 .btn-row .btn.wa{flex:1}
-
 .preview{min-height:26px;font-size:20px}
 .preview .ok{color:var(--teal)}
 .preview .bad{color:#ffb0c2}
+.preview .warn{color:var(--gold);font-size:17px;display:block;margin-top:4px}
 .preview .chip{display:inline-block;margin-right:12px}
-
-/* ---------- in-page diver picker ---------- */
-.picker{position:relative}
-.pick-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:10px 14px;
-  background:rgba(3,10,18,.75);border:2px solid #22394d;font-size:24px;text-align:left}
-.pick-btn[aria-expanded="true"]{border-color:var(--teal-dim);box-shadow:0 0 0 1px var(--teal-dim),0 0 12px rgba(92,225,240,.25)}
-.pick-btn .ph{color:#6f8aa0}
-.chev{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid var(--teal);transition:transform .15s steps(2)}
-.pick-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
-.pick-list{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;list-style:none;max-height:min(52vh,340px);overflow-y:auto;
-  background:#050d16;border:2px solid var(--teal-dim);box-shadow:0 0 18px rgba(92,225,240,.25),0 12px 30px rgba(0,0,0,.6);animation:drop .14s steps(3)}
-@keyframes drop{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
-.pick-list li{display:flex;align-items:center;gap:12px;min-height:50px;padding:8px 14px;font-size:23px;cursor:pointer;border-bottom:1px dashed rgba(150,195,215,.14)}
-.pick-list li:last-child{border-bottom:0}
-.pick-list li .sw{width:10px;height:10px;flex:none}
-.pick-list li .ck{margin-left:auto;color:var(--teal);font-family:var(--lab);font-size:12px;letter-spacing:.2em}
-.pick-list li.active{background:rgba(92,225,240,.1)}
-.pick-list li[aria-selected="true"]{color:var(--teal)}
-.pick-list li.add{color:var(--pink);font-family:var(--lab);font-size:13px;letter-spacing:.2em}
 .bulk{list-style:none;margin-top:6px;font-size:19px}
 .bulk li{display:flex;gap:10px;align-items:baseline;padding:3px 0}
 .bulk li b{font-family:var(--lab);font-weight:400;font-size:12px;color:var(--teal);min-width:48px}
 .bulk li .old{color:var(--gold);font-size:16px}
-footer.ver{margin-top:28px;text-align:center;font-family:var(--lab);font-size:10px;letter-spacing:.3em;color:#4d6679}
+
+/* ---------- in-page diver picker ---------- */
+.picker{position:relative}
+.pick-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:10px 14px;background:rgba(3,10,18,.75);border:2px solid #22394d;font-size:24px;text-align:left}
+.pick-btn[aria-expanded="true"]{border-color:var(--teal-dim);box-shadow:0 0 0 1px var(--teal-dim),0 0 12px rgba(92,225,240,.25)}
+.pick-btn .ph{color:#6f8aa0}
+.chev{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid var(--teal);transition:transform .15s steps(2)}
+.pick-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.pick-list{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:30;list-style:none;max-height:min(52vh,340px);overflow-y:auto;background:#050d16;border:2px solid var(--teal-dim);box-shadow:0 0 18px rgba(92,225,240,.25),0 12px 30px rgba(0,0,0,.6);animation:drop .14s steps(3)}
+@keyframes drop{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
+.pick-list li{display:flex;align-items:center;gap:12px;min-height:50px;padding:8px 14px;font-size:23px;cursor:pointer;border-bottom:1px dashed rgba(150,195,215,.14)}
+.pick-list li:last-child{border-bottom:0}
+.pick-list li .ck{margin-left:auto;color:var(--teal);font-family:var(--lab);font-size:12px;letter-spacing:.2em}
+.pick-list li.active{background:rgba(92,225,240,.1)}
+.pick-list li[aria-selected="true"]{color:var(--teal)}
+.pick-list li.add{color:var(--pink);font-family:var(--lab);font-size:13px;letter-spacing:.2em}
 
 /* ---------- board ---------- */
 .day-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .day-nav .t{text-align:center}
-.day-nav .t b{display:block;font-family:var(--pix);font-weight:400;font-size:17px;color:var(--text)}
+.day-nav .t b{display:block;font-family:var(--pix);font-weight:400;font-size:17px}
 .day-nav .t span{font-family:var(--lab);font-size:11px;letter-spacing:.3em;color:var(--muted)}
 .arrow{width:48px;height:48px;border:2px solid var(--edge);background:rgba(10,24,38,.9);color:var(--teal);font-size:18px}
 .arrow:disabled{color:#34495a}
-
 .dive svg{display:block;width:100%;height:auto;overflow:visible}
 .dive text{font-family:var(--mono)}
-
-ol.board{list-style:none;margin-top:10px}
-.board li{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;padding:12px 6px;border-bottom:2px dashed rgba(150,195,215,.14)}
-.board li:last-child{border-bottom:0}
-.board .rk{font-size:26px;text-align:center;font-family:var(--lab)}
-.board .rk.n{font-size:16px;color:var(--muted)}
-.board .nm{font-size:24px;display:flex;align-items:center;gap:8px;min-width:0}
-.board .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.board .you{font-family:var(--lab);font-size:10px;letter-spacing:.2em;color:var(--pink);border:1px solid var(--pink);padding:2px 4px;flex:none}
+ol.board,ul.surface{list-style:none;margin-top:10px}
+.board>li{display:grid;grid-template-columns:40px 1fr auto;align-items:start;gap:10px;padding:12px 6px;border-bottom:2px dashed rgba(150,195,215,.14)}
+.board>li:last-child{border-bottom:0}
+.board .rk{font-size:26px;text-align:center;font-family:var(--lab);padding-top:2px}
+.board .rk.n{font-size:16px;color:var(--muted);padding-top:8px}
+.who{display:flex;align-items:center;gap:8px;min-width:0;font-size:24px;background:none;border:0;text-align:left;padding:0}
+.who .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.av{flex:none;font-size:20px}
+.you{font-family:var(--lab);font-weight:400;font-size:10px;letter-spacing:.2em;color:var(--pink);border:1px solid var(--pink);padding:2px 4px;flex:none}
 .board .seq{font-size:18px;letter-spacing:2px;margin-top:3px;word-break:break-all}
-.board .sc{font-family:var(--pix);font-size:18px;color:var(--teal);text-shadow:0 0 10px rgba(92,225,240,.5);text-align:right}
+.board .sc{font-family:var(--pix);font-size:18px;color:var(--teal);text-shadow:0 0 10px rgba(92,225,240,.5);text-align:right;padding-top:4px}
 .board .sc small{display:block;margin-top:6px;font-family:var(--mono);font-size:16px;color:var(--muted);text-shadow:none}
-.board li.me{background:linear-gradient(90deg,rgba(255,61,110,.12),transparent 70%);box-shadow:inset 3px 0 0 var(--pink)}
-.board .del{background:none;border:0;color:var(--muted);font-size:16px;padding:2px 0 0;text-decoration:underline}
+.board>li.me{background:linear-gradient(90deg,rgba(255,61,110,.12),transparent 70%);box-shadow:inset 3px 0 0 var(--pink)}
+.linkbtn{background:none;border:0;color:var(--muted);font-size:16px;padding:2px 0 0;text-decoration:underline}
+.extra{font-size:16px;color:var(--muted);margin-top:4px}
+.rx{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.rx button{min-height:30px;padding:0 8px;border:1px solid #22394d;background:rgba(3,10,18,.6);font-size:16px}
+.rx button.mine{border-color:var(--teal-dim);background:rgba(92,225,240,.12)}
+.rx .add{color:var(--muted);font-family:var(--lab);font-size:11px}
+.rx-pick{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap}
+.rx-pick button{width:40px;height:40px;border:1px solid var(--teal-dim);background:#050d16;font-size:20px}
 .empty{padding:22px 6px;color:var(--muted);font-size:20px;text-align:center}
+.surface li{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:10px;padding:8px 6px;color:var(--muted)}
+.surface .rk{text-align:center;font-size:22px}
+.surface .who{font-size:21px;color:var(--muted)}
+
+/* chatter */
+.chat{list-style:none;margin-bottom:12px}
+.chat li{padding:6px 0;border-bottom:1px dashed rgba(150,195,215,.12);font-size:20px;word-wrap:break-word}
+.chat li b{font-weight:400;color:var(--teal)}
+.chat li time{font-size:15px;color:#557085;margin-left:6px}
 
 /* ---------- log ---------- */
 ul.log{list-style:none}
@@ -168,36 +189,89 @@ ul.log{list-style:none}
 
 /* ---------- stats ---------- */
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:18px}
-.legend i{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:1px}
+.legend i,.sw{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:1px;flex:none}
 .cards{display:grid;gap:12px}
-.pcard{border:2px solid var(--edge);background:var(--panel);padding:12px 14px}
+.pcard{border:2px solid var(--edge);background:var(--panel);padding:12px 14px;cursor:pointer}
 .pcard.me{box-shadow:inset 3px 0 0 var(--pink)}
 .pcard h3{display:flex;align-items:center;gap:10px;font-weight:400;font-size:25px}
 .pcard h3 .pos{font-family:var(--pix);font-size:12px;color:var(--muted)}
-.pcard h3 i{width:10px;height:10px;display:inline-block}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 8px;margin-top:10px}
-.stat b{display:block;font-family:var(--pix);font-weight:400;font-size:15px;color:var(--text)}
+.stat b{display:block;font-family:var(--pix);font-weight:400;font-size:15px}
 .stat span{font-family:var(--lab);font-size:10px;letter-spacing:.2em;color:var(--muted)}
 .stat.hot b{color:var(--teal);text-shadow:0 0 8px rgba(92,225,240,.45)}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;font-size:20px}
+.badges span{border:1px solid #22394d;padding:1px 6px;background:rgba(3,10,18,.5)}
 .note{font-size:17px;color:var(--muted);margin-top:10px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-height:38px;padding:4px 10px;border:2px solid #22394d;background:rgba(3,10,18,.6);font-size:19px}
+.chips button[aria-pressed="true"]{border-color:var(--teal);color:var(--teal);box-shadow:0 0 10px rgba(92,225,240,.25)}
+.h2h-score{display:flex;align-items:center;justify-content:center;gap:16px;margin:14px 0 6px;font-family:var(--pix);font-size:26px}
+.h2h-score .c{font-size:14px;color:var(--muted)}
+.h2h-lines{font-size:19px;color:var(--muted);text-align:center}
 
-/* ---------- tabs ---------- */
-nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;
-  background:rgba(5,12,20,.92);border-top:2px solid var(--edge);padding:6px 8px calc(env(safe-area-inset-bottom) + 6px);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
-nav.tabs .in{display:flex;width:100%;max-width:560px;gap:6px}
-nav.tabs button{flex:1;min-height:52px;background:none;border:2px solid transparent;font-family:var(--lab);font-size:13px;letter-spacing:.25em;color:var(--muted)}
+/* ---------- abyss ---------- */
+.depth-hero{text-align:center;padding:10px 0 4px}
+.depth-hero b{display:block;font-family:var(--pix);font-weight:400;font-size:clamp(26px,9vw,40px);color:var(--teal);text-shadow:0 0 14px rgba(92,225,240,.5)}
+.depth-hero span{display:block;margin-top:10px;font-size:21px}
+.depth-hero small{display:block;margin-top:6px;font-size:17px;color:var(--muted)}
+.awards{display:grid;gap:10px}
+.award{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start;border:2px solid var(--edge);background:var(--panel);padding:10px 12px}
+.award .i{font-size:30px;text-align:center}
+.award h4{font-family:var(--lab);font-weight:400;font-size:12px;letter-spacing:.25em;color:var(--muted)}
+.award p{font-size:22px;margin-top:2px}
+.award p b{font-weight:400;color:var(--teal)}
+.award small{display:block;font-size:17px;color:var(--muted)}
+
+/* ---------- overlays ---------- */
+.overlay{position:fixed;inset:0;z-index:70;background:rgba(2,6,12,.72);display:flex;align-items:flex-end;justify-content:center}
+.overlay.center{align-items:center;padding:16px}
+.sheet{width:100%;max-width:560px;max-height:88vh;overflow-y:auto;background:#07121d;border-top:2px solid var(--teal-dim);box-shadow:0 -10px 30px rgba(0,0,0,.6),0 0 20px rgba(92,225,240,.15);
+  padding:16px 16px calc(env(safe-area-inset-bottom) + 20px);animation:up .18s steps(4)}
+@keyframes up{from{transform:translateY(40px);opacity:0}}
+.modal{width:100%;max-width:440px;max-height:84vh;overflow-y:auto;background:#07121d;border:2px solid var(--teal-dim);box-shadow:0 0 24px rgba(92,225,240,.2);padding:16px;animation:up .15s steps(3)}
+.ov-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.ov-head h3{font-family:var(--lab);font-weight:400;font-size:14px;letter-spacing:.3em}
+.x{width:44px;height:44px;border:2px solid #22394d;background:none;font-size:20px;color:var(--muted)}
+.modal .btns{display:grid;gap:8px;margin-top:14px}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.cmp div{border:2px solid #22394d;padding:8px;font-size:19px}
+.cmp div b{display:block;font-family:var(--lab);font-weight:400;font-size:11px;letter-spacing:.2em;color:var(--muted)}
+.cmp div strong{display:block;font-family:var(--pix);font-weight:400;font-size:16px;color:var(--teal);margin:6px 0}
+.conf{border-bottom:1px dashed rgba(150,195,215,.18);padding:10px 0}
+.seg{display:flex;margin-top:8px}
+.seg button{flex:1;min-height:40px;border:2px solid #22394d;background:none;font-family:var(--lab);font-size:11px;letter-spacing:.1em;color:var(--muted)}
+.seg button+button{border-left:0}
+.seg button[aria-pressed="true"]{color:var(--teal);border-color:var(--teal-dim);background:rgba(92,225,240,.1)}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:48px;background:none;border:0;border-bottom:1px dashed rgba(150,195,215,.14);font-size:21px;text-align:left}
+.toggle i{flex:none;width:46px;height:24px;border:2px solid #22394d;position:relative;background:#050d16}
+.toggle i::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--muted)}
+.toggle[aria-checked="true"] i{border-color:var(--teal-dim)}
+.toggle[aria-checked="true"] i::after{left:24px;background:var(--teal);box-shadow:0 0 8px var(--teal)}
+.swatches,.avatars{display:flex;flex-wrap:wrap;gap:8px}
+.swatches button{width:36px;height:36px;border:2px solid #0a1622}
+.swatches button[aria-pressed="true"]{outline:2px solid #fff;outline-offset:2px}
+.avatars button{width:44px;height:44px;border:2px solid #22394d;background:#050d16;font-size:24px}
+.avatars button[aria-pressed="true"]{border-color:var(--teal);box-shadow:0 0 10px rgba(92,225,240,.35)}
+.adm li{list-style:none;padding:10px 0;border-bottom:1px dashed rgba(150,195,215,.14)}
+.adm .row-in{margin-top:6px}
+.small{font-size:17px;color:var(--muted)}
+.hist{list-style:none}
+.hist li{display:grid;grid-template-columns:64px 60px 1fr;gap:8px;padding:6px 0;border-bottom:1px dashed rgba(150,195,215,.12);font-size:19px;align-items:center}
+.hist li b{font-family:var(--lab);font-weight:400;font-size:12px;color:var(--teal)}
+.bigav{font-size:54px;text-align:center;filter:drop-shadow(0 0 12px rgba(92,225,240,.35))}
+.pname{text-align:center;font-size:30px;margin-top:6px}
+.locked-b{opacity:.3;filter:grayscale(1)}
+
+/* ---------- tabs / toast ---------- */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;background:rgba(5,12,20,.92);border-top:2px solid var(--edge);padding:6px 8px calc(env(safe-area-inset-bottom) + 6px);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+nav.tabs .in{display:flex;width:100%;max-width:560px;gap:4px}
+nav.tabs button{flex:1;min-height:52px;background:none;border:2px solid transparent;font-family:var(--lab);font-size:12px;letter-spacing:.18em;color:var(--muted)}
 nav.tabs button[aria-selected="true"]{color:var(--teal);border-color:#18303f;background:rgba(92,225,240,.06);text-shadow:0 0 8px rgba(92,225,240,.6)}
-
-.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,20px);opacity:0;z-index:60;
-  background:#06101a;border:2px solid var(--teal);color:var(--teal);padding:10px 16px;font-family:var(--lab);font-size:13px;letter-spacing:.15em;
-  box-shadow:0 0 16px rgba(92,225,240,.35);transition:opacity .2s,transform .2s;pointer-events:none;max-width:92vw;text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,20px);opacity:0;z-index:80;background:#06101a;border:2px solid var(--teal);color:var(--teal);padding:10px 16px;font-family:var(--lab);font-size:13px;letter-spacing:.12em;box-shadow:0 0 16px rgba(92,225,240,.35);transition:opacity .2s,transform .2s;pointer-events:none;max-width:92vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .toast.bad{border-color:var(--pink);color:var(--pink);box-shadow:0 0 16px rgba(255,61,110,.35)}
-
-@media (prefers-reduced-motion: reduce){
-  *{animation:none!important;transition:none!important}
-  .fauna{display:none}
-}
+footer.ver{margin-top:28px;text-align:center;font-family:var(--lab);font-size:10px;letter-spacing:.3em;color:#4d6679}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}.fauna{display:none}}
 </style>
 </head>
 <body>
@@ -207,17 +281,21 @@ nav.tabs button[aria-selected="true"]{color:var(--teal);border-color:#18303f;bac
 
 <div class="wrap">
   <header class="top">
-    <div class="logo">KRILLION<small>CREW DIVE LOG</small></div>
-    <div class="status" id="status"><span class="dot"></span><span id="statusText">CONNECTING</span></div>
+    <div class="logo">KRILLION<small id="groupTitle">CREW DIVE LOG</small></div>
+    <div class="top-r">
+      <div class="status" id="status"><span class="dot"></span><span id="statusText">...</span></div>
+      <button class="gear" id="gearBtn" aria-label="Settings">⚙&#xFE0E;</button>
+    </div>
   </header>
 
   <div class="demo-bar hidden" id="demoBar">
-    Demo mode: scores are saved only on this device. Add your Firebase config to share them with the crew.
+    Demo mode: scores are saved only on this device.
     <div class="row">
       <button class="btn ghost" id="seedBtn">Load sample dives</button>
       <button class="btn ghost" id="wipeBtn">Clear demo data</button>
     </div>
   </div>
+  <div class="alert hidden" id="alertBar"></div>
 
   <!-- ================= TODAY ================= -->
   <main id="tab-today">
@@ -261,9 +339,22 @@ nav.tabs button[aria-selected="true"]{color:var(--teal);border-color:#18303f;bac
       </div>
       <div class="dive" id="diveChart"></div>
       <ol class="board" id="board"></ol>
-      <div class="btn-row" style="margin-top:12px">
+      <div id="surfaceWrap" class="hidden">
+        <h3 class="sec sm"><span>STILL ON THE SURFACE</span></h3>
+        <ul class="surface" id="surface"></ul>
+      </div>
+      <div class="btn-row" style="margin-top:14px">
         <button class="btn wa" id="shareBtn" disabled>💬 Share to WhatsApp</button>
         <button class="btn ghost" id="copyBtn" disabled aria-label="Copy summary text">Copy</button>
+      </div>
+    </div>
+
+    <h2 class="sec"><span>RADIO CHATTER</span></h2>
+    <div class="panel">
+      <ul class="chat" id="chat"></ul>
+      <div class="row-in">
+        <input id="chatIn" maxlength="140" placeholder="Talk some trash..." enterkeyhint="send" autocomplete="off">
+        <button class="btn teal" id="chatBtn">Send</button>
       </div>
     </div>
   </main>
@@ -281,10 +372,21 @@ nav.tabs button[aria-selected="true"]{color:var(--teal);border-color:#18303f;bac
       <div class="dive" id="trendChart"></div>
       <div class="legend" id="legend"></div>
     </div>
+    <h2 class="sec"><span>HEAD TO HEAD</span></h2>
+    <div class="panel" id="h2h"></div>
     <h2 class="sec"><span>ALL-TIME</span></h2>
     <div class="cards" id="cards"></div>
-    <p class="note">Ranked by average score. A win needs at least 2 divers that day, ties share the win. A streak counts dives in a row.</p>
+    <p class="note">Ranked by average score. A win needs at least 2 divers that day, ties share the win. 👑 = most wins in the last 7 dives. Tap a diver for their full log.</p>
   </main>
+
+  <!-- ================= ABYSS ================= -->
+  <main id="tab-abyss" class="hidden">
+    <h2 class="sec"><span>THE ABYSS</span></h2>
+    <div class="panel depth-hero" id="depthHero"></div>
+    <h2 class="sec"><span>AWARDS NOBODY ASKED FOR</span></h2>
+    <div class="awards" id="awards"></div>
+  </main>
+
   <footer class="ver" id="ver"></footer>
 </div>
 
@@ -293,14 +395,14 @@ nav.tabs button[aria-selected="true"]{color:var(--teal);border-color:#18303f;bac
     <button role="tab" data-tab="today" aria-selected="true">TODAY</button>
     <button role="tab" data-tab="log" aria-selected="false">LOG</button>
     <button role="tab" data-tab="stats" aria-selected="false">STATS</button>
+    <button role="tab" data-tab="abyss" aria-selected="false">ABYSS</button>
   </div>
 </nav>
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
 /* =====================================================================
-   1. CONFIG: paste your Firebase web config here (see SETUP.md).
-      While apiKey still says "YOUR_API_KEY" the app runs in demo mode.
+   CONFIG
    ===================================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyCV2iOLPN8qw-tBUsiHRI98zJrSBESiANQ",
@@ -311,75 +413,171 @@ const firebaseConfig = {
   appId: "1:405117284642:web:c30c1035697a5addf2b57b",
   measurementId: "G-W55VGYSYED"
 };
-// Link included at the bottom of the WhatsApp message. Leave empty to use this page's own address.
-const SITE_URL = "";
-
-/* ===================================================================== */
-const APP_VERSION = "1.1";
+const SITE_URL = "";                 // leave empty to use this page's own address
+const APP_VERSION = "2.0";
 const FB_VER = "10.12.2";
+
+/* =====================================================================
+   CONSTANTS
+   ===================================================================== */
 const PALETTE = ['#5ce1f0','#ff3d6e','#e3b341','#a58cff','#7ee787','#ff9f43','#f472b6','#60a5fa','#c3e88d','#ffd6a5'];
-const ME_KEY = 'krillion_me';
+const AVATARS = ['🦐','🐙','🦑','🐠','🐟','🐡','🦈','🐳','🐬','🦀','🦞','🪼','🐢','🦭','🐚','🪸','🧜','🤿'];
+const REACTIONS = ['🔥','💀','🐟','😂','👑','🫡'];
+const ME_KEY = 'krillion_me', SET_KEY = 'krillion_settings';
+// Krillion day 77 was 30 Sep 2026. Used for weekday stats.
+const DAY_ZERO = {day: 77, utc: Date.UTC(2026, 8, 30)};
+
+// Points per answer: black 0, bubbles 10, clown 15, fish 30, octopus 60, lantern 85, star 100.
+const TIERS = [0, 10, 15, 30, 60, 85, 100];
+const TIER = {0:{n:'Miss',i:'⚫'},10:{n:'Bubble',i:'🫧'},15:{n:'Clown',i:'🤡'},30:{n:'Fish',i:'🐟'},60:{n:'Octopus',i:'🦑'},85:{n:'Lantern',i:'🏮'},100:{n:'Star',i:'⭐'}};
+const SURE = {'🫧':10, '🦑':60, '🏮':85};   // confirmed by 🏮🏮🫧🦑🦑🦑🫧 = 370
+const GUESS = {'⚫':0,'⬛':0,'🖤':0,'◼':0,'▪':0,'🌑':0,'🤡':15,'🐠':15,'🐟':30,'🐙':60,'⭐':100,'🌟':100,'✨':100,'💫':100,'🌠':100};
+let VAL = {...SURE, ...GUESS};
+
+const BADGES = [
+  {id:'deep',  i:'🌊', n:'Deep Diver',   d:'Score 500+',                t:c => c.mine.some(s => s.score >= 500)},
+  {id:'abyss', i:'🕳️', n:'Abyss Walker', d:'Score 600+',                t:c => c.mine.some(s => s.score >= 600)},
+  {id:'star',  i:'⭐', n:'Star Catcher', d:'Catch a star',              t:c => c.mine.some(s => qvals(s.seq).includes(100))},
+  {id:'lamp',  i:'🏮', n:'Lantern Row',  d:'3+ lanterns in one dive',   t:c => c.mine.some(s => qvals(s.seq).filter(v => v === 85).length >= 3)},
+  {id:'clean', i:'🧼', n:'Clean Sweep',  d:'A dive with zero misses',   t:c => c.mine.some(s => { const q = qvals(s.seq); return q.length >= 7 && !q.includes(0) && !q.includes(null); })},
+  {id:'lungs', i:'🫁', n:'Iron Lungs',   d:'7 dives in a row',          t:c => c.bestStreak >= 7},
+  {id:'capt',  i:'🏆', n:'Captain',      d:'Win a day with 3+ divers',  t:c => c.bigWins > 0},
+  {id:'hat',   i:'🎩', n:'Hat Trick',    d:'3 wins in a row',           t:c => c.bestWinRun >= 3},
+  {id:'rock',  i:'🪨', n:'Rock Bottom',  d:'Score under 50. Oof.',      t:c => c.mine.some(s => s.score < 50)}
+];
+const ROASTS = [
+  '🫧 {last} is still looking for the ocean.',
+  '🪨 {last} hit rock bottom today.',
+  '🐟 {first} swam with the lanterns. {last} swam with the bubbles.',
+  '🦑 The kraken says: better luck tomorrow, {last}.',
+  '🏮 {first} brought a lantern. {last} brought floaties.'
+];
+const NUDGES = [
+  '🦐 {name}, the crew is already diving Krillion #{day}. You are still sunbathing on the surface. {url}',
+  '🌊 Dive #{day} is on and {top} is at -{score}m. {name}, where are you? {url}',
+  '🫧 {name}, the plankton are asking about you. Krillion #{day} is waiting. {url}'
+];
+
 const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => Number(n).toLocaleString('en-US');
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const siteUrl = () => SITE_URL || (location.origin + location.pathname);
 
-const state = { players: [], scores: [], viewDay: null, pinned: false, me: null, parsed: [], backend: null, pick: '', adding: false };
+/* =====================================================================
+   STATE + LOCAL SETTINGS
+   ===================================================================== */
+const state = {
+  players: [], days: {}, scores: [], meta: {}, backend: null,
+  me: null, pick: '', adding: false, parsed: [], viewDay: null, pinned: false,
+  admin: false, rxOpen: null, h2h: [null, null], seen: null, seenChat: null, migrated: false
+};
 try { state.me = localStorage.getItem(ME_KEY); } catch {}
+const settings = Object.assign({sound: true, anim: true, waSeq: false, waMissing: true, waRoast: false},
+  (() => { try { return JSON.parse(localStorage.getItem(SET_KEY)) || {}; } catch { return {}; } })());
+const saveSettings = () => { try { localStorage.setItem(SET_KEY, JSON.stringify(settings)); } catch {} applySettings(); };
+function applySettings(){ document.body.classList.toggle('still', !settings.anim); }
+const setMe = id => { state.me = id; try { id ? localStorage.setItem(ME_KEY, id) : localStorage.removeItem(ME_KEY); } catch {} };
 
-/* ---------------- backends ---------------- */
+/* =====================================================================
+   BACKENDS (same interface for demo and Firebase)
+   ===================================================================== */
 function localBackend(){
-  const KEY = 'krillion_demo_v1';
-  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {players:[],scores:[]}; } catch { return {players:[],scores:[]}; } };
+  const KEY = 'krillion_demo_v2';
+  const blank = () => ({players: [], days: {}, meta: {}});
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || blank(); } catch { return blank(); } };
+  const clone = o => JSON.parse(JSON.stringify(o));
   let st = load();
-  const subs = {p:[], s:[]};
-  const emit = () => { subs.p.forEach(f => f(st.players.slice())); subs.s.forEach(f => f(st.scores.slice())); };
+  const subs = {p: [], d: [], m: []};
+  const emit = () => { subs.p.forEach(f => f(clone(st.players))); subs.d.forEach(f => f(clone(st.days))); subs.m.forEach(f => f(clone(st.meta))); };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch {} emit(); };
   window.addEventListener('storage', e => { if (e.key === KEY) { st = load(); emit(); } });
+  const D = day => (st.days[day] ||= {day: Number(day), entries: {}});
   return {
     mode: 'demo',
-    onPlayers(cb){ subs.p.push(cb); cb(st.players.slice()); },
-    onScores(cb){ subs.s.push(cb); cb(st.scores.slice()); },
-    async addPlayer(name){ const id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); st.players.push({id, name, ts: Date.now()}); save(); return id; },
-    async saveScore(e){ st.scores = st.scores.filter(x => x.id !== e.id); st.scores.push(e); save(); },
-    async deleteScore(id){ st.scores = st.scores.filter(x => x.id !== id); save(); },
+    onPlayers(cb){ subs.p.push(cb); cb(clone(st.players)); },
+    onDays(cb){ subs.d.push(cb); cb(clone(st.days)); },
+    onMeta(cb){ subs.m.push(cb); cb(clone(st.meta)); },
+    async addPlayer(p){ const id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); st.players.push({id, ...p, ts: Date.now()}); save(); return id; },
+    async updatePlayer(id, patch){ const p = st.players.find(x => x.id === id); if (p) Object.assign(p, patch); save(); },
+    async deletePlayer(id){ st.players = st.players.filter(x => x.id !== id); save(); },
+    async setEntry(day, pid, e){ (D(day).entries ||= {})[pid] = e; save(); },
+    async deleteEntry(day, pid){ delete D(day).entries[pid]; save(); },
+    async setReaction(day, pid, who, emo){ const d = D(day); d.reactions ||= {}; d.reactions[pid] ||= {}; if (emo) d.reactions[pid][who] = emo; else delete d.reactions[pid][who]; save(); },
+    async addComment(day, key, c){ (D(day).comments ||= {})[key] = c; save(); },
+    async deleteComment(day, key){ const d = D(day); if (d.comments) delete d.comments[key]; save(); },
+    async setMeta(id, data){ st.meta[id] = {...(st.meta[id] || {}), ...data}; save(); },
+    async legacy(){ return []; },
+    async dropLegacy(){},
     seed(){
       const names = ['Dan','Sivan','Noa','Yoni'];
-      const pl = names.map((n,i) => ({id:'demo'+i, name:n, ts:i}));
-      const seqs = ['🏮🏮🫧🦑🦑🦑🫧','🫧🫧🦑🏮🫧🦑🫧','🦑🦑🫧🫧🏮🫧🫧','🫧🫧🫧🦑🫧🫧🫧','🏮🦑🦑🏮🫧🦑🦑'];
-      const sc = [];
-      for (let d = 64; d <= 77; d++) pl.forEach((p,i) => {
-        if (Math.random() < 0.18 && d < 77) return;
-        const score = Math.max(0, Math.round((220 + i*25 + (Math.random()-.5)*300)/10)*10);
-        sc.push({id:`${d}_${p.id}`, day:d, score, emoji: score > 300 ? '🦐' : '🫧', seq: seqs[(d+i)%seqs.length], playerId:p.id, playerName:p.name, ts:Date.now()});
-      });
-      st = {players: pl, scores: sc}; save();
+      const players = names.map((n, i) => ({id: 'demo' + i, name: n, avatar: AVATARS[i], ts: i}));
+      const vals = [0, 10, 15, 30, 60, 85, 100], ico = {0:'⚫',10:'🫧',15:'🤡',30:'🐟',60:'🦑',85:'🏮',100:'⭐'};
+      const days = {};
+      for (let d = 60; d <= 77; d++) {
+        days[d] = {day: d, entries: {}, reactions: {}, comments: {}};
+        players.forEach((p, i) => {
+          if (Math.random() < .15 && d < 77) return;
+          const q = Array.from({length: 7}, () => vals[Math.min(6, Math.max(0, Math.round(Math.random() * 4.2 + (i === 1 ? .6 : 0) - .4)))]);
+          const score = q.reduce((a, b) => a + b, 0);
+          const hour = [7, 12, 19, 23][i] + Math.random();
+          const ts = DAY_ZERO.utc + (d - DAY_ZERO.day) * 864e5 + hour * 36e5;
+          days[d].entries[p.id] = {score, emoji: score >= 300 ? '🦐' : '🫧', seq: q.map(v => ico[v]).join(''), name: p.name, ts};
+        });
+      }
+      days[77].reactions = {demo1: {demo0: '🔥', demo2: '👑'}};
+      days[77].comments = {c1: {pid: 'demo2', name: 'Noa', text: 'who put the octopus question in there', ts: Date.now() - 3e6}};
+      st = {players, days, meta: {group: {title: 'Krillion Switzerland'}}}; save();
     },
-    wipe(){ st = {players:[], scores:[]}; save(); }
+    wipe(){ st = blank(); save(); }
   };
 }
 
 async function firebaseBackend(cfg){
   const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`);
-  const fs = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`);
-  const db = fs.getFirestore(initializeApp(cfg));
-  const onErr = err => { console.error(err); setStatus('err', 'OFFLINE'); toast(err.code === 'permission-denied' ? 'Database refused access. Check the Firestore rules.' : 'Connection problem. Retrying.', true); };
-  const list = s => s.docs.map(d => ({id: d.id, ...d.data()}));
+  const F = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`);
+  const db = F.getFirestore(initializeApp(cfg));
+  const onErr = err => {
+    console.error(err); setStatus('err', 'OFFLINE');
+    if (err.code === 'permission-denied') showAlert('The database said no. The Firestore rules need updating: paste the new rules from SETUP.md in Firebase > Firestore > Rules.');
+    else toast('Connection problem. Retrying.', true);
+  };
+  const dref = d => F.doc(db, 'days', String(d));
+  const touch = async (day, patch) => { const b = F.writeBatch(db); b.set(dref(day), {day: Number(day)}, {merge: true}); b.update(dref(day), patch); await b.commit(); };
+  const docs = s => s.docs.map(d => ({id: d.id, ...d.data()}));
   return {
     mode: 'live',
-    onPlayers(cb){ fs.onSnapshot(fs.collection(db,'players'), s => { setStatus('live','LIVE'); cb(list(s)); }, onErr); },
-    onScores(cb){ fs.onSnapshot(fs.collection(db,'scores'), s => cb(list(s)), onErr); },
-    async addPlayer(name){ const ref = await fs.addDoc(fs.collection(db,'players'), {name, ts: Date.now()}); return ref.id; },
-    async saveScore(e){ const {id, ...data} = e; await fs.setDoc(fs.doc(db,'scores',id), data); },
-    async deleteScore(id){ await fs.deleteDoc(fs.doc(db,'scores',id)); }
+    onPlayers(cb){ F.onSnapshot(F.collection(db, 'players'), s => { setStatus('live', 'LIVE'); cb(docs(s)); }, onErr); },
+    onDays(cb){ F.onSnapshot(F.collection(db, 'days'), s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, onErr); },
+    onMeta(cb){ F.onSnapshot(F.collection(db, 'meta'), s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, onErr); },
+    async addPlayer(p){ return (await F.addDoc(F.collection(db, 'players'), {...p, ts: Date.now()})).id; },
+    async updatePlayer(id, patch){ await F.updateDoc(F.doc(db, 'players', id), patch); },
+    async deletePlayer(id){ await F.deleteDoc(F.doc(db, 'players', id)); },
+    async setEntry(day, pid, e){ await touch(day, {[`entries.${pid}`]: e}); },
+    async deleteEntry(day, pid){ await touch(day, {[`entries.${pid}`]: F.deleteField()}); },
+    async setReaction(day, pid, who, emo){ await touch(day, {[`reactions.${pid}.${who}`]: emo || F.deleteField()}); },
+    async addComment(day, key, c){ await touch(day, {[`comments.${key}`]: c}); },
+    async deleteComment(day, key){ await touch(day, {[`comments.${key}`]: F.deleteField()}); },
+    async setMeta(id, data){ await F.setDoc(F.doc(db, 'meta', id), data, {merge: true}); },
+    async legacy(){ try { return docs(await F.getDocs(F.collection(db, 'scores'))); } catch { return []; } },
+    async dropLegacy(id){ await F.deleteDoc(F.doc(db, 'scores', id)); }
   };
 }
 
-/* ---------------- parsing ---------------- */
-const seg = (typeof Intl !== 'undefined' && Intl.Segmenter) ? new Intl.Segmenter(undefined, {granularity:'grapheme'}) : null;
+/* =====================================================================
+   PARSING
+   ===================================================================== */
+const seg = (typeof Intl !== 'undefined' && Intl.Segmenter) ? new Intl.Segmenter(undefined, {granularity: 'grapheme'}) : null;
 function emojisIn(s){
-  const parts = seg ? [...seg.segment(s)].map(x => x.segment) : Array.from(s);
+  const parts = seg ? [...seg.segment(s || '')].map(x => x.segment) : Array.from(s || '');
   return parts.filter(g => /\p{Extended_Pictographic}/u.test(g));
 }
+const norm = g => g.replace(/\uFE0F/g, '');
+const qvals = seq => emojisIn(seq).map(norm).map(g => g in VAL ? VAL[g] : null);
+const qsum = seq => { const q = qvals(seq); return q.includes(null) ? null : q.reduce((a, b) => a + b, 0); };
+
 function parseResult(raw){
-  const text = (raw || '').replace(/\r/g,'').trim();
+  const text = (raw || '').replace(/\r/g, '').trim();
   if (!text) return null;
   const m = text.match(/krillion\s*#\s*(\d{1,6})([^\n]*)/i);
   if (!m) return {error: 'Paste the whole result, starting with "Krillion #".'};
@@ -388,12 +586,12 @@ function parseResult(raw){
   const lines = text.slice(m.index + m[0].length).split('\n').map(l => l.trim()).filter(Boolean);
   let score = null, at = -1;
   for (let i = 0; i < lines.length; i++) {
-    const c = lines[i].replace(/[\s,.'’]/g,'');
-    if (/^\d{1,6}$/.test(c)) { score = parseInt(c,10); at = i; break; }
+    const c = lines[i].replace(/[\s,.'’]/g, '');
+    if (/^\d{1,6}$/.test(c)) { score = parseInt(c, 10); at = i; break; }
   }
   if (score === null) for (let i = 0; i < lines.length; i++) {
     const mm = lines[i].match(/\d[\d,]*/);
-    if (mm) { score = parseInt(mm[0].replace(/,/g,''),10); at = i; break; }
+    if (mm) { score = parseInt(mm[0].replace(/,/g, ''), 10); at = i; break; }
   }
   if (score === null) return {error: 'Found the dive number but no score. Check the second line.'};
   if (score > 100000) return {error: 'That score looks off. Paste the result again.'};
@@ -404,10 +602,9 @@ function parseResult(raw){
   }
   return {day, score, emoji, seq};
 }
-
-// Splits a paste into one chunk per "Krillion #N" header, so several days (or a WhatsApp copy) work too.
+// One chunk per "Krillion #N" header, so several days (or a WhatsApp copy) work too.
 function parseMany(raw){
-  const text = (raw || '').replace(/\r/g,'');
+  const text = (raw || '').replace(/\r/g, '');
   if (!text.trim()) return null;
   const re = /krillion\s*#\s*\d{1,6}/gi, starts = [];
   let m; while ((m = re.exec(text))) starts.push(m.index);
@@ -421,24 +618,66 @@ function parseMany(raw){
     else if (twin.score !== p.score || twin.seq !== p.seq) errors.push(`Two different results for #${p.day}. Only paste your own dives.`);
   });
   if (errors.length) return {error: [...new Set(errors)][0]};
-  return {results: found.sort((a,b) => a.day - b.day)};
+  return {results: found.sort((a, b) => a.day - b.day)};
 }
 
-/* ---------------- derived data ---------------- */
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt = n => Number(n).toLocaleString('en-US');
+// Learn any emoji we don't know yet from results whose other emoji we do know.
+function learnValues(){
+  const v = {...SURE};
+  for (let pass = 0; pass < 5; pass++) {
+    let changed = false;
+    for (const s of state.scores) {
+      const g = emojisIn(s.seq).map(norm);
+      if (!g.length) continue;
+      const unk = [...new Set(g.filter(x => !(x in v)))];
+      if (unk.length !== 1) continue;
+      const known = g.filter(x => x in v).reduce((t, x) => t + v[x], 0);
+      const val = (s.score - known) / g.filter(x => x === unk[0]).length;
+      if (TIERS.includes(val)) { v[unk[0]] = val; changed = true; }
+    }
+    if (!changed) break;
+  }
+  for (const [k, x] of Object.entries(GUESS)) if (!(k in v)) v[k] = x;
+  VAL = v;
+}
+
+/* =====================================================================
+   DERIVED DATA
+   ===================================================================== */
 const playerById = id => state.players.find(p => p.id === id);
-const nameOf = s => playerById(s.playerId)?.name || s.playerName || 'Diver';
-const colorOf = id => {
-  const sorted = [...state.players].sort((a,b) => (a.ts||0) - (b.ts||0));
-  const i = sorted.findIndex(p => p.id === id);
+function colorOf(id){
+  const p = playerById(id);
+  if (p?.color) return p.color;
+  const i = [...state.players].sort((a, b) => (a.ts || 0) - (b.ts || 0)).findIndex(x => x.id === id);
   return PALETTE[(i < 0 ? 0 : i) % PALETTE.length];
-};
-const days = () => [...new Set(state.scores.map(s => s.day))].sort((a,b) => a - b);
+}
+function avatarOf(id){
+  const p = playerById(id);
+  if (p?.avatar) return p.avatar;
+  const i = [...state.players].sort((a, b) => (a.ts || 0) - (b.ts || 0)).findIndex(x => x.id === id);
+  return AVATARS[(i < 0 ? 0 : i) % 8];
+}
+const nameOfId = id => playerById(id)?.name || state.scores.find(s => s.playerId === id)?.playerName || 'Diver';
+const nameOf = s => playerById(s.playerId)?.name || s.playerName || 'Diver';
+
+function rebuild(){
+  const list = [];
+  for (const [k, d] of Object.entries(state.days)) {
+    const day = Number(d.day ?? k);
+    for (const [pid, e] of Object.entries(d.entries || {})) {
+      list.push({id: `${day}_${pid}`, day, playerId: pid, score: Number(e.score), emoji: e.emoji || '🦐', seq: e.seq || '',
+        playerName: e.name || '', ts: e.ts || 0, bulk: !!e.bulk, extra: e.extra || []});
+    }
+  }
+  state.scores = list;
+  learnValues();
+}
+const entryOf = (day, pid) => state.scores.find(s => s.day === day && s.playerId === pid);
+const days = () => [...new Set(state.scores.map(s => s.day))].sort((a, b) => a - b);
 function ranked(day){
-  const rows = state.scores.filter(s => s.day === day).sort((a,b) => b.score - a.score || nameOf(a).localeCompare(nameOf(b)));
+  const rows = state.scores.filter(s => s.day === day).sort((a, b) => b.score - a.score || nameOf(a).localeCompare(nameOf(b)));
   let rank = 0, prev = null;
-  rows.forEach((r,i) => { if (r.score !== prev) { rank = i + 1; prev = r.score; } r.rank = rank; });
+  rows.forEach((r, i) => { if (r.score !== prev) { rank = i + 1; prev = r.score; } r.rank = rank; });
   return rows;
 }
 const medal = r => ['🥇','🥈','🥉'][r - 1] || `${r}.`;
@@ -448,51 +687,200 @@ function currentDay(){
   if (state.pinned && d.includes(state.viewDay)) return state.viewDay;
   return d[d.length - 1];
 }
+const weekday = day => new Date(DAY_ZERO.utc + (day - DAY_ZERO.day) * 864e5).getUTCDay();
+const WD = ['Sundays','Mondays','Tuesdays','Wednesdays','Thursdays','Fridays','Saturdays'];
 
-function computeStats(){
-  const all = days();
-  const latest = all[all.length - 1];
-  const byDay = {};
-  state.scores.forEach(s => (byDay[s.day] ||= []).push(s));
-  const winners = {};
-  Object.entries(byDay).forEach(([d, rows]) => {
-    if (rows.length < 2) return;
-    const top = Math.max(...rows.map(r => r.score));
-    rows.filter(r => r.score === top).forEach(r => winners[r.playerId] = (winners[r.playerId] || 0) + 1);
+function winnersByDay(){
+  const out = {};
+  for (const d of days()) {
+    const rows = ranked(d);
+    if (rows.length < 2) continue;
+    out[d] = {ids: rows.filter(r => r.rank === 1).map(r => r.playerId), n: rows.length, rows};
+  }
+  return out;
+}
+function captain(){
+  const d = days().slice(-7), w = winnersByDay(), count = {};
+  d.forEach(x => (w[x]?.ids || []).forEach(id => count[id] = (count[id] || 0) + 1));
+  const best = Math.max(0, ...Object.values(count));
+  const top = Object.keys(count).filter(id => count[id] === best);
+  return best > 0 && top.length === 1 ? top[0] : null;
+}
+function playerStats(id){
+  const all = days(), latest = all[all.length - 1], w = winnersByDay();
+  const mine = state.scores.filter(s => s.playerId === id).sort((a, b) => a.day - b.day);
+  const played = mine.length, total = mine.reduce((t, s) => t + s.score, 0);
+  const set = new Set(mine.map(s => s.day));
+  let bestStreak = 0, run = 0, prev = null, wins = 0, bigWins = 0, bestWinRun = 0, winRun = 0, prevWin = null;
+  mine.forEach(s => {
+    run = (prev !== null && s.day === prev + 1) ? run + 1 : 1; bestStreak = Math.max(bestStreak, run); prev = s.day;
+    const won = w[s.day]?.ids.includes(id);
+    if (won) { wins++; if (w[s.day].n >= 3) bigWins++; winRun = (prevWin !== null && s.day === prevWin + 1) ? winRun + 1 : 1; prevWin = s.day; bestWinRun = Math.max(bestWinRun, winRun); }
+    else { winRun = 0; prevWin = null; }
   });
+  let cur = 0, start = set.has(latest) ? latest : (set.has(latest - 1) ? latest - 1 : null);
+  if (start !== null) while (set.has(start)) { cur++; start--; }
+  const c = {id, name: nameOfId(id), mine, played, avg: played ? total / played : 0, top: played ? Math.max(...mine.map(s => s.score)) : 0,
+    wins, bigWins, bestWinRun, cur, bestStreak};
+  c.badges = BADGES.filter(b => { try { return b.t(c); } catch { return false; } }).map(b => b.id);
+  return c;
+}
+function allStats(){
   const ids = new Set([...state.players.map(p => p.id), ...state.scores.map(s => s.playerId)]);
-  return [...ids].map(id => {
-    const mine = state.scores.filter(s => s.playerId === id).sort((a,b) => a.day - b.day);
-    const played = mine.length;
-    const total = mine.reduce((t,s) => t + s.score, 0);
-    const set = new Set(mine.map(s => s.day));
-    let best = 0, run = 0, prev = null;
-    mine.forEach(s => { run = (prev !== null && s.day === prev + 1) ? run + 1 : 1; best = Math.max(best, run); prev = s.day; });
-    let cur = 0;
-    let start = set.has(latest) ? latest : (set.has(latest - 1) ? latest - 1 : null);
-    if (start !== null) while (set.has(start)) { cur++; start--; }
-    return {
-      id, name: playerById(id)?.name || mine[mine.length-1]?.playerName || 'Diver',
-      played, avg: played ? total / played : 0, top: played ? Math.max(...mine.map(s => s.score)) : 0,
-      wins: winners[id] || 0, cur, bestStreak: best
-    };
-  }).sort((a,b) => (b.played > 0) - (a.played > 0) || b.avg - a.avg || b.wins - a.wins);
+  return [...ids].map(playerStats).sort((a, b) => (b.played > 0) - (a.played > 0) || b.avg - a.avg || b.wins - a.wins);
 }
 
-/* ---------------- rendering ---------------- */
-function sortedPlayers(){ return [...state.players].sort((a,b) => a.name.localeCompare(b.name)); }
+/* ---------- the abyss: silly stats ---------- */
+const sd = a => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((t, x) => t + (x - m) ** 2, 0) / a.length); };
+function abyss(){
+  const S = state.scores;
+  if (!S.length) return null;
+  const by = {};
+  S.forEach(s => (by[s.playerId] ||= []).push(s));
+  const ids = Object.keys(by);
+  const minN = Math.max(1, Math.min(3, ...ids.map(i => by[i].length)));
+  const eligible = ids.filter(i => by[i].length >= minN);
+  const N = id => `<b>${esc(nameOfId(id))}</b>`;
+  const top = (arr, f, dir = 1) => arr.map(x => [x, f(x)]).filter(x => x[1] !== null && !Number.isNaN(x[1])).sort((a, b) => dir * (b[1] - a[1]))[0];
+  const aw = [];
+  const tierRate = v => top(eligible, id => by[id].reduce((t, s) => t + qvals(s.seq).filter(x => x === v).length, 0) / by[id].length);
+
+  const tierAwards = [[0,'🕳️','BLACK HOLE','misses'],[10,'🫧','BUBBLE BLOWER','bubbles'],[15,'🤡','CLOWN CAR','clowns'],[60,'🦑','KRAKEN TAMER','octopi'],[85,'🏮','LANTERN KEEPER','lanterns']];
+  for (const [v, i, t, word] of tierAwards) {
+    const r = tierRate(v);
+    if (r && r[1] > 0) aw.push({i, t, p: `${N(r[0])}`, s: `${r[1].toFixed(1)} ${word} per dive`});
+  }
+  const stars = top(ids, id => by[id].reduce((t, s) => t + qvals(s.seq).filter(x => x === 100).length, 0));
+  aw.push(stars && stars[1] > 0 ? {i: '⭐', t: 'STAR CATCHER', p: N(stars[0]), s: `${stars[1]} star${stars[1] > 1 ? 's' : ''} caught`}
+    : {i: '⭐', t: 'STAR CATCHER', p: 'Nobody. Yet.', s: 'The sky is empty. First star gets a badge.'});
+
+  const low = [...S].sort((a, b) => a.score - b.score)[0], high = [...S].sort((a, b) => b.score - a.score)[0];
+  aw.push({i: '🌊', t: 'DEEPEST DIVE EVER', p: N(high.playerId), s: `${fmt(high.score)} on #${high.day}`});
+  aw.push({i: '🪨', t: 'ROCK BOTTOM', p: N(low.playerId), s: `${fmt(low.score)} on #${low.day}. We don't talk about it.`});
+
+  const swingers = ids.filter(i => by[i].length >= 3);
+  if (swingers.length >= 2) {
+    const wild = top(swingers, id => sd(by[id].map(s => s.score)));
+    const calm = top(swingers, id => -sd(by[id].map(s => s.score)));
+    aw.push({i: '🎢', t: 'ROLLERCOASTER', p: N(wild[0]), s: `swings ±${Math.round(wild[1])} from dive to dive`});
+    aw.push({i: '🕰️', t: 'HUMAN METRONOME', p: N(calm[0]), s: `only ±${Math.round(-calm[1])}. Suspiciously steady.`});
+  }
+
+  // Nemesis: the most one-sided pair
+  let nem = null;
+  for (const a of ids) for (const b of ids) {
+    if (a >= b) continue;
+    let aw_ = 0, bw = 0, n = 0;
+    for (const s of by[a]) { const o = by[b].find(x => x.day === s.day); if (!o) continue; n++; if (s.score > o.score) aw_++; else if (o.score > s.score) bw++; }
+    if (n < 3) continue;
+    const [w, l, ww] = aw_ >= bw ? [a, b, aw_] : [b, a, bw];
+    const ratio = ww / n;
+    if (!nem || ratio > nem.ratio || (ratio === nem.ratio && n > nem.n)) nem = {w, l, ww, n, ratio};
+  }
+  if (nem) aw.push({i: '😈', t: 'NEMESIS', p: `${N(nem.w)} owns ${N(nem.l)}`, s: `won ${nem.ww} of their ${nem.n} shared dives`});
+
+  const W = winnersByDay(), silver = {}, margins = [];
+  for (const [d, x] of Object.entries(W)) {
+    x.rows.filter(r => r.rank === 2).forEach(r => silver[r.playerId] = (silver[r.playerId] || 0) + 1);
+    if (x.ids.length === 1) margins.push({d, w: x.rows[0], s: x.rows[1], m: x.rows[0].score - x.rows[1].score});
+  }
+  const sil = top(Object.keys(silver), id => silver[id]);
+  if (sil) aw.push({i: '🥈', t: 'ETERNAL SILVER', p: N(sil[0]), s: `${sil[1]} second place${sil[1] > 1 ? 's' : ''}. So close, so often.`});
+  if (margins.length) {
+    const close = [...margins].sort((a, b) => a.m - b.m)[0], blow = [...margins].sort((a, b) => b.m - a.m)[0];
+    aw.push({i: '📸', t: 'PHOTO FINISH', p: `${N(close.w.playerId)} beat ${N(close.s.playerId)}`, s: `by just ${close.m} on #${close.d}`});
+    if (blow !== close) aw.push({i: '💥', t: 'BLOWOUT', p: `${N(blow.w.playerId)} crushed ${N(blow.s.playerId)}`, s: `by ${blow.m} on #${blow.d}`});
+  }
+
+  // Comeback Kid: last place, then first place the next dive
+  const cb = {};
+  for (const d of days()) {
+    const a = W[d], b = W[d + 1];
+    if (!a || !b || a.n < 3) continue;
+    const lastRank = Math.max(...a.rows.map(r => r.rank));
+    a.rows.filter(r => r.rank === lastRank).forEach(r => { if (b.ids.includes(r.playerId)) cb[r.playerId] = (cb[r.playerId] || 0) + 1; });
+  }
+  const kid = top(Object.keys(cb), id => cb[id]);
+  if (kid) aw.push({i: '🔄', t: 'COMEBACK KID', p: N(kid[0]), s: `went from last to first ${kid[1]} time${kid[1] > 1 ? 's' : ''}`});
+
+  // Early bird / night owl, from when results were logged (bulk imports skipped)
+  const mins = id => { const t = by[id].filter(s => !s.bulk && s.ts).map(s => { const d = new Date(s.ts); return d.getHours() * 60 + d.getMinutes(); }); return t.length >= 3 ? t.reduce((a, b) => a + b, 0) / t.length : null; };
+  const timed = ids.filter(id => mins(id) !== null);
+  if (timed.length >= 2) {
+    const hhmm = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(Math.round(m % 60)).padStart(2, '0')}`;
+    const early = top(timed, id => -mins(id)), late = top(timed, id => mins(id));
+    aw.push({i: '🐓', t: 'EARLY BIRD', p: N(early[0]), s: `usually logs around ${hhmm(-early[1])}`});
+    aw.push({i: '🦉', t: 'NIGHT OWL', p: N(late[0]), s: `usually logs around ${hhmm(late[1])}`});
+  }
+
+  // Ghost: longest disappearance, including right now
+  const all = days(), latest = all[all.length - 1];
+  const gap = id => { const d = by[id].map(s => s.day).sort((a, b) => a - b); let g = 0; for (let i = 1; i < d.length; i++) g = Math.max(g, d[i] - d[i - 1] - 1); return Math.max(g, latest - d[d.length - 1]); };
+  const ghost = top(ids, gap);
+  if (ghost && ghost[1] >= 2) aw.push({i: '👻', t: 'GHOST', p: N(ghost[0]), s: `vanished for ${ghost[1]} dives in a row`});
+
+  // Twins: identical emoji rows on the same day
+  const twins = [];
+  for (const d of all) { const r = S.filter(s => s.day === d && s.seq); for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) if (r[i].seq === r[j].seq) twins.push([r[i], r[j]]); }
+  if (twins.length) { const t = twins[twins.length - 1]; aw.push({i: '👯', t: 'TWINS', p: `${N(t[0].playerId)} & ${N(t[1].playerId)}`, s: `the exact same dive on #${t[0].day}${twins.length > 1 ? ` (and ${twins.length - 1} more times across the crew)` : ''}`}); }
+
+  // The Jinx: crew average drops when this person dives
+  let jinx = null;
+  for (const id of ids) {
+    const withD = [], without = [];
+    for (const d of all) {
+      const others = S.filter(s => s.day === d && s.playerId !== id);
+      if (!others.length) continue;
+      const avg = others.reduce((t, s) => t + s.score, 0) / others.length;
+      (entryOf(d, id) ? withD : without).push(avg);
+    }
+    if (withD.length < 3 || without.length < 3) continue;
+    const drop = without.reduce((a, b) => a + b, 0) / without.length - withD.reduce((a, b) => a + b, 0) / withD.length;
+    if (!jinx || drop > jinx.drop) jinx = {id, drop};
+  }
+  if (jinx && jinx.drop > 5) aw.push({i: '🧿', t: 'THE JINX', p: N(jinx.id), s: `everyone else scores ${Math.round(jinx.drop)} less when they dive`});
+
+  // Weekdays
+  const wd = {};
+  S.forEach(s => (wd[weekday(s.day)] ||= []).push(s.score));
+  const wds = Object.keys(wd).filter(k => wd[k].length >= 2);
+  if (wds.length >= 2) {
+    const avg = k => wd[k].reduce((a, b) => a + b, 0) / wd[k].length;
+    const cursed = top(wds, k => -avg(k)), lucky = top(wds, k => avg(k));
+    aw.push({i: '🍀', t: 'LUCKY DAY', p: `<b>${WD[lucky[0]]}</b>`, s: `crew average ${Math.round(lucky[1])}`});
+    aw.push({i: '📅', t: 'CURSED DAY', p: `<b>${WD[cursed[0]]}</b>`, s: `crew average ${Math.round(-cursed[1])}. Stay in bed.`});
+  }
+
+  // Fast starter / strong finisher
+  const qAvg = (id, qi) => { const v = by[id].map(s => qvals(s.seq)[qi]).filter(x => x != null); return v.length >= minN ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const fs = top(eligible, id => qAvg(id, 0)), sf = top(eligible, id => qAvg(id, 6));
+  if (fs) aw.push({i: '🚀', t: 'FAST STARTER', p: N(fs[0]), s: `averages ${Math.round(fs[1])} on question 1`});
+  if (sf) aw.push({i: '🏁', t: 'STRONG FINISHER', p: N(sf[0]), s: `averages ${Math.round(sf[1])} on question 7`});
+
+  // Went dark: longest run of misses inside one dive
+  let dark = null;
+  for (const s of S) { let run = 0, best = 0; for (const v of qvals(s.seq)) { run = v === 0 ? run + 1 : 0; best = Math.max(best, run); } if (best >= 2 && (!dark || best > dark.best)) dark = {s, best}; }
+  if (dark) aw.push({i: '🌑', t: 'WENT DARK', p: N(dark.s.playerId), s: `${dark.best} misses in a row on #${dark.s.day}`});
+
+  const total = S.reduce((t, s) => t + s.score, 0);
+  return {aw, total, dives: S.length, questions: S.reduce((t, s) => t + (emojisIn(s.seq).length || 7), 0)};
+}
+
+/* =====================================================================
+   RENDERING
+   ===================================================================== */
 function renderPlayers(){
-  const ps = sortedPlayers();
+  const ps = [...state.players].sort((a, b) => a.name.localeCompare(b.name));
   if (!state.adding) {
     if (state.me && playerById(state.me)) state.pick = state.me;
     else if (!playerById(state.pick)) state.pick = '';
   }
   if (!ps.length) { state.pick = ''; state.adding = true; }
   $('pickList').innerHTML = ps.map(p => `<li role="option" data-v="${esc(p.id)}" aria-selected="${p.id === state.pick}">
-      <i class="sw" style="background:${colorOf(p.id)}"></i><span>${esc(p.name)}</span>${p.id === state.me ? '<span class="ck">YOU</span>' : ''}</li>`).join('') +
+      <span class="av">${esc(avatarOf(p.id))}</span><span>${esc(p.name)}</span>${p.id === state.me ? '<span class="ck">YOU</span>' : ''}</li>`).join('') +
     `<li role="option" class="add" data-v="__add" aria-selected="false">＋ Add me to the crew</li>`;
   const cur = playerById(state.pick);
-  $('pickText').textContent = state.adding ? 'New diver' : (cur ? cur.name : 'Who are you?');
+  $('pickText').textContent = state.adding ? 'New diver' : (cur ? `${avatarOf(cur.id)} ${cur.name}` : 'Who are you?');
   $('pickText').className = cur && !state.adding ? '' : 'ph';
   $('addRow').classList.toggle('hidden', !state.adding);
   updateSubmit();
@@ -503,121 +891,136 @@ function renderHero(day){
   const mine = rows.find(r => r.playerId === state.me);
   const big = $('heroScore'), line = $('heroLine'), dep = $('heroDepth'), em = $('heroEmoji');
   if (!rows.length) { big.textContent = '---'; dep.innerHTML = '&nbsp;'; em.textContent = '🦐'; line.textContent = 'PASTE YOUR FIRST DIVE BELOW'; return; }
+  const r = mine || rows[0];
+  big.textContent = r.score; em.textContent = r.emoji || '🦐'; dep.textContent = `-${fmt(r.score)}m`;
   if (mine) {
-    const beaten = rows.filter(r => r.score < mine.score).length;
-    big.textContent = mine.score;
-    em.textContent = mine.emoji || '🦐';
-    dep.textContent = `-${fmt(mine.score)}m`;
-    line.textContent = rows.length === 1 ? 'FIRST IN THE WATER' :
-      mine.rank === 1 ? `DEEPEST OF ${rows.length} DIVERS` : beaten === 0 ? `SHALLOWEST OF ${rows.length} DIVERS` : `DEEPER THAN ${beaten} OF ${rows.length - 1} CREWMATES`;
-  } else {
-    const top = rows[0];
-    big.textContent = top.score;
-    em.textContent = top.emoji || '🦐';
-    dep.textContent = `-${fmt(top.score)}m`;
-    line.textContent = `${nameOf(top).toUpperCase()} LEADS. YOUR TURN`;
-  }
+    const beaten = rows.filter(x => x.score < mine.score).length;
+    line.textContent = rows.length === 1 ? 'FIRST IN THE WATER' : mine.rank === 1 ? `DEEPEST OF ${rows.length} DIVERS`
+      : beaten === 0 ? `SHALLOWEST OF ${rows.length} DIVERS` : `DEEPER THAN ${beaten} OF ${rows.length - 1} CREWMATES`;
+  } else line.textContent = `${nameOf(rows[0]).toUpperCase()} LEADS. YOUR TURN`;
 }
 
 function diveSVG(rows){
   if (!rows.length) return '';
   const W = 340, H = 196, top = 22, bot = 164, left = 34;
-  const maxS = Math.max(700, ...rows.map(r => r.score));
-  const step = Math.ceil(maxS / 4 / 50) * 50;
-  const scale = step * 4;
+  const step = Math.ceil(Math.max(700, ...rows.map(r => r.score)) / 4 / 50) * 50, scale = step * 4;
   const y = s => top + (s / scale) * (bot - top);
-  const cols = [...rows].sort((a,b) => nameOf(a).localeCompare(nameOf(b)));
+  const cols = [...rows].sort((a, b) => nameOf(a).localeCompare(nameOf(b)));
   const gap = (W - left - 8) / cols.length;
   let g = '';
   for (let i = 0; i <= 4; i++) {
     const yy = top + i * (bot - top) / 4;
-    g += `<line x1="${left}" x2="${W}" y1="${yy}" y2="${yy}" stroke="rgba(150,195,215,.25)" stroke-dasharray="4 4"/>`;
-    g += `<text x="0" y="${yy + 4}" font-size="13" fill="#88a2b4">${i ? '-' + step * i : '0m'}</text>`;
+    g += `<line x1="${left}" x2="${W}" y1="${yy}" y2="${yy}" stroke="rgba(150,195,215,.25)" stroke-dasharray="4 4"/><text x="0" y="${yy + 4}" font-size="13" fill="#88a2b4">${i ? '-' + step * i : '0m'}</text>`;
   }
+  const anim = settings.anim;
   cols.forEach((r, i) => {
-    const x = left + gap * (i + .5);
-    const me = r.playerId === state.me;
-    const c = me ? '#ff3d6e' : '#5ce1f0';
-    const yy = y(r.score);
-    g += `<line x1="${x}" x2="${x}" y1="${top}" y2="${yy - 10}" stroke="${c}" stroke-opacity=".7" stroke-width="1.5"><animate attributeName="y2" from="${top}" to="${yy - 10}" dur=".9s" fill="freeze"/></line>`;
-    g += `<g><text x="${x}" y="${yy + 7}" text-anchor="middle" font-size="20" style="filter:drop-shadow(0 0 5px ${c})">${esc(r.emoji || '🦐')}<animate attributeName="y" from="${top}" to="${yy + 7}" dur=".9s" fill="freeze"/></text></g>`;
-    const nm = nameOf(r); const short = nm.length > 7 ? nm.slice(0, 6) + '.' : nm;
+    const x = left + gap * (i + .5), me = r.playerId === state.me, c = me ? '#ff3d6e' : '#5ce1f0', yy = y(r.score);
+    g += `<line x1="${x}" x2="${x}" y1="${top}" y2="${yy - 10}" stroke="${c}" stroke-opacity=".7" stroke-width="1.5">${anim ? `<animate attributeName="y2" from="${top}" to="${yy - 10}" dur=".9s" fill="freeze"/>` : ''}</line>`;
+    g += `<text x="${x}" y="${yy + 7}" text-anchor="middle" font-size="20" style="filter:drop-shadow(0 0 5px ${c})">${esc(avatarOf(r.playerId))}${anim ? `<animate attributeName="y" from="${top}" to="${yy + 7}" dur=".9s" fill="freeze"/>` : ''}</text>`;
+    const nm = nameOf(r), short = nm.length > 7 ? nm.slice(0, 6) + '.' : nm;
     g += `<text x="${x}" y="${H - 8}" text-anchor="middle" font-size="15" fill="${me ? '#ff3d6e' : '#e9f2f6'}">${esc(short)}</text>`;
   });
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Dive depth by diver">${g}</svg>`;
 }
 
+function reactionsHTML(day, pid){
+  const r = state.days[day]?.reactions?.[pid] || {};
+  const counts = {};
+  Object.values(r).forEach(e => counts[e] = (counts[e] || 0) + 1);
+  const mineR = state.me ? r[state.me] : null;
+  const key = `${day}|${pid}`;
+  let h = `<div class="rx">` + Object.entries(counts).map(([e, n]) => `<button data-react="${key}" data-emo="${e}" class="${mineR === e ? 'mine' : ''}" aria-label="React ${e}">${e} ${n}</button>`).join('') +
+    `<button class="add" data-rxopen="${key}" aria-label="Add reaction">＋☺</button></div>`;
+  if (state.rxOpen === key) h += `<div class="rx-pick">` + REACTIONS.map(e => `<button data-react="${key}" data-emo="${e}">${e}</button>`).join('') + `</div>`;
+  return h;
+}
+
 function renderBoard(){
-  const d = days(), day = currentDay();
+  const d = days(), day = currentDay(), latest = d[d.length - 1];
   const rows = day == null ? [] : ranked(day);
-  const i = d.indexOf(day);
+  const i = d.indexOf(day), capt = captain();
   $('prevDay').disabled = i <= 0;
   $('nextDay').disabled = i < 0 || i >= d.length - 1;
   $('boardTitle').textContent = day == null ? 'DIVE #??' : `DIVE #${day}`;
-  $('boardSub').textContent = !rows.length ? 'NO DIVES YET' : `${rows.length} DIVER${rows.length > 1 ? 'S' : ''}${i === d.length - 1 ? ' | LATEST' : ''}`;
+  $('boardSub').textContent = !rows.length ? 'NO DIVES YET' : `${rows.length} DIVER${rows.length > 1 ? 'S' : ''}${day === latest ? ' | LATEST' : ''}`;
   $('diveChart').innerHTML = diveSVG(rows);
   $('board').innerHTML = rows.length ? rows.map(r => {
-    const me = r.playerId === state.me;
+    const me = r.playerId === state.me, canDel = me || state.admin;
+    const ex = (r.extra || []).map(x => `also logged ${fmt(x.score)} ${esc(x.emoji || '')}`).join(', ');
     return `<li class="${me ? 'me' : ''}">
       <div class="rk ${r.rank > 3 ? 'n' : ''}">${medal(r.rank)}</div>
-      <div><div class="nm"><span>${esc(nameOf(r))}</span>${me ? '<b class="you">YOU</b>' : ''}</div>
-        <div class="seq">${esc(r.seq || '')}</div></div>
-      <div class="sc">${fmt(r.score)}<small>${esc(r.emoji || '')}</small>${me ? `<button class="del" data-del="${esc(r.id)}">remove</button>` : ''}</div>
+      <div style="min-width:0">
+        <button class="who" data-player="${esc(r.playerId)}"><span class="av">${esc(avatarOf(r.playerId))}</span><span class="n">${esc(nameOf(r))}</span>${capt === r.playerId ? '<span title="Captain of the week">👑</span>' : ''}${me ? '<b class="you">YOU</b>' : ''}</button>
+        <div class="seq">${esc(r.seq)}</div>
+        ${ex ? `<div class="extra">${ex}</div>` : ''}
+        ${reactionsHTML(r.day, r.playerId)}
+      </div>
+      <div class="sc">${fmt(r.score)}<small>${esc(r.emoji || '')}</small>${canDel ? `<button class="linkbtn" data-del="${r.day}|${esc(r.playerId)}">remove</button>` : ''}</div>
     </li>`;
   }).join('') : `<li class="empty" style="display:block">No one has dived yet. Paste a result above to open the board.</li>`;
+
+  const missing = day === latest && rows.length ? state.players.filter(p => !entryOf(day, p.id)) : [];
+  $('surfaceWrap').classList.toggle('hidden', !missing.length);
+  $('surface').innerHTML = missing.map(p => `<li><div class="rk">🏖️</div>
+      <button class="who" data-player="${esc(p.id)}"><span class="av">${esc(avatarOf(p.id))}</span><span class="n">${esc(p.name)}</span>${p.id === state.me ? '<b class="you">YOU</b>' : ''}</button>
+      ${p.id === state.me ? '<span class="small">log above ↑</span>' : `<button class="btn sm gold" data-nudge="${esc(p.id)}">Nudge</button>`}</li>`).join('');
   $('shareBtn').disabled = $('copyBtn').disabled = !rows.length;
+  renderChat(day);
+}
+
+function renderChat(day){
+  const c = day == null ? {} : (state.days[day]?.comments || {});
+  const list = Object.entries(c).map(([k, v]) => ({k, ...v})).sort((a, b) => a.ts - b.ts);
+  const t = ts => { const d = new Date(ts); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+  $('chat').innerHTML = list.length ? list.map(m => `<li><b data-player="${esc(m.pid)}" style="cursor:pointer">${esc(avatarOf(m.pid))} ${esc(nameOfId(m.pid) || m.name)}</b>: ${esc(m.text)}<time>${t(m.ts)}</time>
+      ${(m.pid === state.me || state.admin) ? ` <button class="linkbtn" data-delchat="${esc(m.k)}">✕</button>` : ''}</li>`).join('')
+    : `<li class="small" style="border:0">${day == null ? 'Nothing to talk about yet.' : `Quiet down here. Say something about dive #${day}.`}</li>`;
 }
 
 function renderLog(){
   const d = days().reverse();
   $('logList').innerHTML = d.length ? d.map(day => {
-    const rows = ranked(day);
-    const winners = rows.filter(r => r.rank === 1).map(nameOf).join(' & ');
+    const rows = ranked(day), winners = rows.filter(r => r.rank === 1).map(nameOf).join(' & ');
     const mine = rows.find(r => r.playerId === state.me);
+    const chat = Object.keys(state.days[day]?.comments || {}).length;
     return `<li data-day="${day}" tabindex="0" role="button" aria-label="Open dive ${day}">
       <div class="d">#${day}</div>
       <div class="w">🥇 ${esc(winners)} ${fmt(rows[0].score)}${mine ? `<span class="mine">You: ${fmt(mine.score)} (${medal(mine.rank)})</span>` : ''}</div>
-      <div class="n">${rows.length} 🤿</div></li>`;
+      <div class="n">${rows.length} 🤿${chat ? `<br>${chat} 💬` : ''}</div></li>`;
   }).join('') : `<li class="empty" style="display:block;cursor:default">Your crew's dives will stack up here.</li>`;
 }
 
-function trendSVG(){
-  const d = days().slice(-14);
-  if (!d.length) return '<div class="empty">Log a few dives to see the trend.</div>';
-  const W = 340, H = 190, L = 34, R = 10, T = 10, B = 160;
-  const maxS = Math.max(700, ...state.scores.filter(s => d.includes(s.day)).map(s => s.score));
-  const step = Math.ceil(maxS / 4 / 50) * 50, scale = step * 4;
-  const x = i => d.length === 1 ? (L + W - R) / 2 : L + i * (W - L - R) / (d.length - 1);
+function lineChart(dList, ids, H = 190){
+  const W = 340, L = 34, R = 10, T = 10, B = H - 30;
+  const vals = state.scores.filter(s => dList.includes(s.day) && ids.includes(s.playerId)).map(s => s.score);
+  const step = Math.ceil(Math.max(700, ...vals) / 4 / 50) * 50, scale = step * 4;
+  const x = i => dList.length === 1 ? (L + W - R) / 2 : L + i * (W - L - R) / (dList.length - 1);
   const y = s => B - (s / scale) * (B - T);
   let g = '';
-  for (let i = 0; i <= 4; i++) {
-    const yy = B - i * (B - T) / 4;
-    g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="rgba(150,195,215,.2)" stroke-dasharray="4 4"/>`;
-    g += `<text x="0" y="${yy + 4}" font-size="13" fill="#88a2b4">${step * i}</text>`;
-  }
-  const lab = d.length > 8 ? 2 : 1;
-  d.forEach((day, i) => { if ((d.length - 1 - i) % lab === 0) g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="14" fill="#88a2b4">#${day}</text>`; });
-  const ids = [...new Set(state.scores.filter(s => d.includes(s.day)).map(s => s.playerId))];
+  for (let i = 0; i <= 4; i++) { const yy = B - i * (B - T) / 4; g += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="rgba(150,195,215,.2)" stroke-dasharray="4 4"/><text x="0" y="${yy + 4}" font-size="13" fill="#88a2b4">${step * i}</text>`; }
+  const lab = Math.ceil(dList.length / 7);
+  dList.forEach((day, i) => { if ((dList.length - 1 - i) % lab === 0) g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" font-size="14" fill="#88a2b4">#${day}</text>`; });
   ids.forEach(id => {
-    const c = colorOf(id);
-    const pts = d.map((day, i) => { const s = state.scores.find(q => q.day === day && q.playerId === id); return s ? [x(i), y(s.score)] : null; });
+    const c = colorOf(id), me = id === state.me;
+    const pts = dList.map((day, i) => { const s = entryOf(day, id); return s ? [x(i), y(s.score)] : null; });
     let path = '', pen = false;
     pts.forEach(p => { if (!p) { pen = false; return; } path += `${pen ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)} `; pen = true; });
-    const me = id === state.me;
-    g += `<path d="${path}" fill="none" stroke="${c}" stroke-width="${me ? 2.5 : 1.5}" stroke-opacity="${me ? 1 : .8}"/>`;
+    g += `<path d="${path}" fill="none" stroke="${c}" stroke-width="${me ? 2.5 : 1.5}" stroke-opacity="${me ? 1 : .85}"/>`;
     pts.forEach(p => { if (p) g += `<rect x="${p[0] - 3}" y="${p[1] - 3}" width="6" height="6" fill="${c}"/>`; });
   });
-  $('legend').innerHTML = ids.map(id => `<span><i style="background:${colorOf(id)}"></i>${esc(playerById(id)?.name || state.scores.find(s => s.playerId === id)?.playerName || 'Diver')}</span>`).join('');
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scores over the last dives" style="shape-rendering:crispEdges">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Scores over time" style="shape-rendering:crispEdges">${g}</svg>`;
 }
 
 function renderStats(){
-  $('trendChart').innerHTML = trendSVG();
-  if (!days().length) $('legend').innerHTML = '';
-  const st = computeStats().filter(p => p.played > 0);
+  const d = days().slice(-14);
+  const ids = [...new Set(state.scores.filter(s => d.includes(s.day)).map(s => s.playerId))];
+  $('trendChart').innerHTML = d.length ? lineChart(d, ids) : '<div class="empty">Log a few dives to see the trend.</div>';
+  $('legend').innerHTML = ids.map(id => `<span><i style="background:${colorOf(id)}"></i>${esc(nameOfId(id))}</span>`).join('');
+  renderH2H();
+  const st = allStats().filter(p => p.played > 0), capt = captain();
   $('cards').innerHTML = st.length ? st.map((p, i) => `
-    <div class="pcard ${p.id === state.me ? 'me' : ''}">
-      <h3><span class="pos">#${i + 1}</span><i style="background:${colorOf(p.id)}"></i>${esc(p.name)}</h3>
+    <div class="pcard ${p.id === state.me ? 'me' : ''}" data-player="${esc(p.id)}" role="button" tabindex="0">
+      <h3><span class="pos">#${i + 1}</span><span class="av">${esc(avatarOf(p.id))}</span><span>${esc(p.name)}</span>${capt === p.id ? '👑' : ''}<i class="sw" style="background:${colorOf(p.id)};margin-left:auto"></i></h3>
       <div class="grid3">
         <div class="stat hot"><b>${Math.round(p.avg)}</b><span>AVG</span></div>
         <div class="stat"><b>${p.wins}</b><span>WINS</span></div>
@@ -626,44 +1029,233 @@ function renderStats(){
         <div class="stat hot"><b>${p.cur}${p.cur >= 3 ? '🔥' : ''}</b><span>STREAK</span></div>
         <div class="stat"><b>${p.bestStreak}</b><span>TOP STREAK</span></div>
       </div>
+      ${p.badges.length ? `<div class="badges">${p.badges.map(b => { const x = BADGES.find(y => y.id === b); return `<span title="${esc(x.n)}">${x.i}</span>`; }).join('')}</div>` : ''}
     </div>`).join('') : '<div class="empty">No divers yet.</div>';
 }
 
+function renderH2H(){
+  const ps = state.players.filter(p => state.scores.some(s => s.playerId === p.id));
+  if (ps.length < 2) { $('h2h').innerHTML = '<div class="small">Needs at least two divers.</div>'; return; }
+  let [a, b] = state.h2h;
+  if (!ps.some(p => p.id === a)) a = (ps.find(p => p.id === state.me) || ps[0]).id;
+  if (!ps.some(p => p.id === b) || b === a) b = ps.find(p => p.id !== a).id;
+  state.h2h = [a, b];
+  const chips = (side, sel) => `<div class="chips" style="margin-bottom:8px">${ps.map(p => `<button data-h2h="${side}" data-id="${esc(p.id)}" aria-pressed="${p.id === sel}" ${p.id === (side ? a : b) ? 'disabled style="opacity:.3"' : ''}>${esc(avatarOf(p.id))} ${esc(p.name)}</button>`).join('')}</div>`;
+  let wa = 0, wb = 0, t = 0, n = 0, bigA = null, bigB = null, sumM = 0;
+  for (const s of state.scores.filter(x => x.playerId === a)) {
+    const o = entryOf(s.day, b); if (!o) continue; n++;
+    const m = s.score - o.score; sumM += Math.abs(m);
+    if (m > 0) { wa++; if (!bigA || m > bigA.m) bigA = {m, d: s.day}; } else if (m < 0) { wb++; if (!bigB || -m > bigB.m) bigB = {m: -m, d: s.day}; } else t++;
+  }
+  $('h2h').innerHTML = chips(0, a) + `<div class="small" style="text-align:center">vs</div>` + chips(1, b) +
+    (n ? `<div class="h2h-score"><span style="color:${colorOf(a)}">${wa}</span><span class="c">:</span><span style="color:${colorOf(b)}">${wb}</span></div>
+     <div class="h2h-lines">${n} shared dive${n > 1 ? 's' : ''}${t ? `, ${t} tie${t > 1 ? 's' : ''}` : ''}. Average gap ${Math.round(sumM / n)}.<br>
+     ${bigA ? `${esc(nameOfId(a))}'s biggest win: +${bigA.m} on #${bigA.d}<br>` : ''}${bigB ? `${esc(nameOfId(b))}'s biggest win: +${bigB.m} on #${bigB.d}` : ''}</div>`
+     : '<div class="h2h-lines" style="margin-top:10px">These two have never dived on the same day.</div>');
+}
+
+function renderAbyss(){
+  const a = abyss();
+  if (!a) { $('depthHero').innerHTML = '<span>The abyss is empty. Log some dives.</span>'; $('awards').innerHTML = ''; return; }
+  const cmp = a.total >= 10935 ? `${(a.total / 10935).toFixed(1)} Mariana Trenches` : a.total >= 3800 ? `${(a.total / 3800).toFixed(1)} Titanic wrecks deep` : `${(a.total / 828).toFixed(1)} Burj Khalifas upside down`;
+  $('depthHero').innerHTML = `<small>TOGETHER THE CREW HAS DIVED</small><b>-${fmt(a.total)}m</b><span>That's ${cmp}.</span><small>${a.dives} dives, ${fmt(a.questions)} questions answered</small>`;
+  $('awards').innerHTML = a.aw.map(x => `<div class="award"><div class="i">${x.i}</div><div><h4>${x.t}</h4><p>${x.p}</p><small>${x.s}</small></div></div>`).join('') ||
+    '<div class="empty">A few more dives and the weird stats show up here.</div>';
+}
+
 function renderAll(){
-  const day = currentDay();
-  renderHero(day);
-  renderBoard();
-  renderLog();
-  renderStats();
+  renderHero(currentDay());
+  renderBoard(); renderLog(); renderStats(); renderAbyss();
+  const title = state.meta.group?.title;
+  $('groupTitle').textContent = title ? title.toUpperCase() : 'CREW DIVE LOG';
   const latest = days().slice(-1)[0];
   document.title = latest ? `Krillion Crew | Dive #${latest}` : 'Krillion Crew | Daily Dive Log';
 }
 
-/* ---------------- input flow ---------------- */
+/* =====================================================================
+   OVERLAYS (modal + sheet)
+   ===================================================================== */
+function overlay(html, {sheet = false, onClick, onClose} = {}){
+  const ov = document.createElement('div');
+  ov.className = 'overlay' + (sheet ? '' : ' center');
+  ov.innerHTML = `<div class="${sheet ? 'sheet' : 'modal'}" role="dialog" aria-modal="true">${html}</div>`;
+  document.body.appendChild(ov); document.body.classList.add('locked');
+  const close = v => { ov.remove(); if (!document.querySelector('.overlay')) document.body.classList.remove('locked'); onClose?.(v); };
+  ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('[data-close]')) close(null); else onClick?.(e, close, ov); });
+  ov.addEventListener('keydown', e => { if (e.key === 'Escape') close(null); });
+  setTimeout(() => ov.querySelector('button,input')?.focus({preventScroll: true}), 30);
+  return {ov, close};
+}
+function ask(title, body, buttons){
+  return new Promise(res => {
+    overlay(`<div class="ov-head"><h3>${title}</h3><button class="x" data-close aria-label="Close">✕</button></div>${body}
+      <div class="btns">${buttons.map(b => `<button class="btn ${b.cls || 'ghost'}" data-val="${b.v}">${b.label}</button>`).join('')}</div>`,
+      {onClick: (e, close) => { const b = e.target.closest('[data-val]'); if (b) close(b.dataset.val); }, onClose: v => res(v)});
+  });
+}
+
+// "You already logged this dive": pick keep old / replace / keep both, per dive.
+function resolveConflicts(list){
+  const card = (c, label) => `<div class="cmp">
+      <div><b>ALREADY LOGGED</b><strong>${fmt(c.old.score)} ${esc(c.old.emoji)}</strong>${esc(c.old.seq)}</div>
+      <div><b>${label}</b><strong>${fmt(c.p.score)} ${esc(c.p.emoji)}</strong>${esc(c.p.seq)}</div></div>`;
+  if (list.length === 1) {
+    const c = list[0];
+    return ask(`DIVE #${c.p.day}`, `<p class="small">You already have a result for this dive. Which one is true?</p>${card(c, 'NEW')}
+      <p class="small" style="margin-top:8px">Keep both saves the new one too, but the first one still counts for the ranking.</p>`,
+      [{label: 'Replace with new', v: 'replace', cls: 'pink'}, {label: 'Keep both', v: 'both', cls: 'teal'}, {label: 'Cancel', v: 'keep'}])
+      .then(v => v ? [v] : null);
+  }
+  return new Promise(res => {
+    const choice = list.map(() => 'keep');
+    const body = list.map((c, i) => `<div class="conf"><b style="font-family:var(--lab);font-weight:400;font-size:12px;color:var(--teal)">DIVE #${c.p.day}</b>${card(c, 'NEW')}
+      <div class="seg" data-i="${i}"><button data-c="keep" aria-pressed="true">Keep old</button><button data-c="replace" aria-pressed="false">Replace</button><button data-c="both" aria-pressed="false">Keep both</button></div></div>`).join('');
+    overlay(`<div class="ov-head"><h3>${list.length} DIVES ALREADY LOGGED</h3><button class="x" data-close aria-label="Close">✕</button></div>
+      <p class="small">Pick which result is true for each one. Keep both saves the new one too, the first still counts.</p>${body}
+      <div class="btns"><button class="btn pink" data-go>Confirm</button><button class="btn ghost" data-close>Cancel</button></div>`, {
+      onClick: (e, close) => {
+        const b = e.target.closest('.seg button');
+        if (b) { const i = +b.parentElement.dataset.i; choice[i] = b.dataset.c; b.parentElement.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); }
+        if (e.target.closest('[data-go]')) close(choice);
+      }, onClose: v => res(v)
+    });
+  });
+}
+
+function openPlayer(id){
+  const p = playerStats(id), me = id === state.me;
+  const hist = [...p.mine].reverse();
+  const d = days().slice(-30);
+  overlay(`<div class="ov-head"><h3>DIVER FILE</h3><button class="x" data-close aria-label="Close">✕</button></div>
+    <div class="bigav">${esc(avatarOf(id))}</div><div class="pname" style="color:${colorOf(id)}">${esc(p.name)}${captain() === id ? ' 👑' : ''}${me ? ' <b class="you">YOU</b>' : ''}</div>
+    <div class="grid3" style="margin-top:14px">
+      <div class="stat hot"><b>${Math.round(p.avg)}</b><span>AVG</span></div><div class="stat"><b>${p.wins}</b><span>WINS</span></div><div class="stat"><b>${fmt(p.top)}</b><span>BEST</span></div>
+      <div class="stat"><b>${p.played}</b><span>DIVES</span></div><div class="stat hot"><b>${p.cur}</b><span>STREAK</span></div><div class="stat"><b>${p.bestStreak}</b><span>TOP STREAK</span></div>
+    </div>
+    <h4 class="sec sm"><span>BADGES</span></h4>
+    <div class="badges">${BADGES.map(b => `<span class="${p.badges.includes(b.id) ? '' : 'locked-b'}" title="${esc(b.d)}">${b.i} <small style="font-size:15px">${esc(b.n)}</small></span>`).join('')}</div>
+    ${p.played ? `<h4 class="sec sm"><span>LAST 30 DIVES</span></h4><div class="dive">${lineChart(d, [id], 170)}</div>` : ''}
+    <h4 class="sec sm"><span>FULL LOG</span></h4>
+    <ul class="hist">${hist.map(s => `<li><b>#${s.day}</b><span>${fmt(s.score)} ${esc(s.emoji)}</span><span>${medal(ranked(s.day).find(r => r.playerId === id)?.rank || 0)} ${esc(s.seq)}</span></li>`).join('') || '<li class="small">No dives yet.</li>'}</ul>`, {sheet: true});
+}
+
+/* =====================================================================
+   SETTINGS
+   ===================================================================== */
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+async function sha(s){ const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('krillion:' + s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
+
+function openSettings(){
+  const me = playerById(state.me);
+  const tog = (k, label) => `<button class="toggle" role="switch" aria-checked="${!!settings[k]}" data-set="${k}"><span>${label}</span><i></i></button>`;
+  const hasPin = !!state.meta.admin?.pinHash;
+  const adminHTML = !hasPin ? `<p class="small">No admin yet. Set a PIN to become the admin: you'll be able to remove anyone's scores and fix names. Only one PIN can ever be set here (reset it in Firebase if needed).</p>
+      <div class="row-in" style="margin-top:8px"><input id="pinNew" inputmode="numeric" maxlength="8" placeholder="New PIN"><button class="btn gold" data-act="setpin">Set</button></div>`
+    : !state.admin ? `<div class="row-in"><input id="pinIn" inputmode="numeric" maxlength="8" placeholder="Admin PIN"><button class="btn gold" data-act="unlock">Unlock</button></div>`
+    : `<p class="small">Admin unlocked on this device. Remove buttons now show on every score and comment.</p>
+      <ul class="adm">${state.players.map(p => `<li><span class="av">${esc(avatarOf(p.id))}</span> ${esc(p.name)} <span class="small">(${state.scores.filter(s => s.playerId === p.id).length} dives)</span>
+        <div class="row-in"><input data-rename="${esc(p.id)}" value="${esc(p.name)}" maxlength="20"><button class="btn sm teal" data-act="rename" data-id="${esc(p.id)}">Save</button></div>
+        <div class="btn-row" style="margin-top:6px"><button class="btn sm ghost" data-act="merge" data-id="${esc(p.id)}">Merge into...</button><button class="btn sm pink" data-act="delp" data-id="${esc(p.id)}">Delete</button></div></li>`).join('')}</ul>
+      <button class="btn ghost wide" data-act="lock" style="margin-top:10px">Lock admin</button>`;
+  const {ov, close} = overlay(`<div class="ov-head"><h3>SETTINGS</h3><button class="x" data-close aria-label="Close">✕</button></div>
+    <h4 class="sec sm"><span>YOU</span></h4>
+    ${me ? `<div class="row-in"><input id="myName" value="${esc(me.name)}" maxlength="20"><button class="btn sm teal" data-act="myname">Save</button></div>
+      <p class="field" style="margin-top:12px">COLOR</p><div class="swatches">${PALETTE.map(c => `<button data-color="${c}" style="background:${c}" aria-pressed="${colorOf(me.id) === c}" aria-label="Color ${c}"></button>`).join('')}</div>
+      <p class="field" style="margin-top:12px">AVATAR</p><div class="avatars">${AVATARS.map(a => `<button data-avatar="${a}" aria-pressed="${avatarOf(me.id) === a}">${a}</button>`).join('')}</div>
+      <button class="btn ghost wide" data-act="switch" style="margin-top:12px">Not ${esc(me.name)}? Switch diver</button>`
+      : `<p class="small">Pick your name in the Log your dive box first.</p>`}
+    <h4 class="sec sm"><span>DISPLAY</span></h4>
+    ${tog('sound', 'Sounds')}${tog('anim', 'Animations (fish, bubbles)')}
+    <h4 class="sec sm"><span>WHATSAPP MESSAGE</span></h4>
+    ${tog('waSeq', 'Include emoji rows')}${tog('waMissing', 'List who is still on the surface')}${tog('waRoast', 'Add a roast line')}
+    <h4 class="sec sm"><span>CREW</span></h4>
+    <div class="row-in"><input id="grpName" value="${esc(state.meta.group?.title || '')}" maxlength="30" placeholder="Group name"><button class="btn sm teal" data-act="group">Save</button></div>
+    <h4 class="sec sm"><span>APP</span></h4>
+    ${standalone ? '<p class="small">Installed on this phone. Nice.</p>'
+      : installEvt ? '<button class="btn teal wide" data-act="install">Add to home screen</button>'
+      : isIOS ? '<p class="small">iPhone: tap Share (the square with the arrow) in Safari, then "Add to Home Screen".</p>'
+      : '<p class="small">Android: Chrome menu ⋮ then "Add to Home screen". Once installed, you can share results from Krillion straight into this app.</p>'}
+    <h4 class="sec sm"><span>ADMIN</span></h4>${adminHTML}
+    <p class="small" style="margin-top:18px;text-align:center">Krillion Crew v${APP_VERSION}</p>`, {sheet: true, onClick: async (e, close) => {
+      const t = e.target;
+      const set = t.closest('[data-set]');
+      if (set) { const k = set.dataset.set; settings[k] = !settings[k]; set.setAttribute('aria-checked', String(settings[k])); saveSettings(); if (k === 'anim') renderAll(); return; }
+      const col = t.closest('[data-color]');
+      if (col) { await safe(() => state.backend.updatePlayer(state.me, {color: col.dataset.color})); ov.querySelectorAll('[data-color]').forEach(b => b.setAttribute('aria-pressed', String(b === col))); return; }
+      const av = t.closest('[data-avatar]');
+      if (av) { await safe(() => state.backend.updatePlayer(state.me, {avatar: av.dataset.avatar})); ov.querySelectorAll('[data-avatar]').forEach(b => b.setAttribute('aria-pressed', String(b === av))); return; }
+      const act = t.closest('[data-act]')?.dataset.act, id = t.closest('[data-act]')?.dataset.id;
+      if (!act) return;
+      if (act === 'myname') { const n = cleanName(ov.querySelector('#myName').value); if (n && await safe(() => state.backend.updatePlayer(state.me, {name: n}))) toast('Name saved'); }
+      if (act === 'switch') { close(); setMe(null); state.pick = ''; renderPlayers(); renderAll(); showTab('today'); $('picker').scrollIntoView({block: 'center'}); setTimeout(() => openPicker(true), 250); }
+      if (act === 'group') { const n = ov.querySelector('#grpName').value.trim().slice(0, 30); if (await safe(() => state.backend.setMeta('group', {title: n}))) toast('Group name saved'); }
+      if (act === 'install' && installEvt) { installEvt.prompt(); installEvt = null; close(); }
+      if (act === 'setpin') { const v = ov.querySelector('#pinNew').value.trim(); if (v.length < 4) return toast('Use at least 4 digits.', true);
+        const h = await sha(v);
+        if (await safe(() => state.backend.setMeta('admin', {pinHash: h}), 'Could not set the PIN. It may already exist.')) { state.admin = true; toast('PIN set. You are the admin.'); close(); renderAll(); openSettings(); } }
+      if (act === 'unlock') { const v = ov.querySelector('#pinIn').value.trim(); if (await sha(v) === state.meta.admin?.pinHash) { state.admin = true; toast('Admin unlocked'); close(); renderAll(); openSettings(); } else toast('Wrong PIN', true); }
+      if (act === 'lock') { state.admin = false; close(); renderAll(); }
+      if (act === 'rename') { const n = cleanName(ov.querySelector(`[data-rename="${id}"]`).value); if (n && await safe(() => state.backend.updatePlayer(id, {name: n}))) toast('Renamed'); }
+      if (act === 'merge') mergeFlow(id, close);
+      if (act === 'delp') deleteFlow(id, close);
+    }});
+}
+const cleanName = v => { const n = v.trim().replace(/\s+/g, ' ').slice(0, 20); if (!n) toast('Name cannot be empty.', true); return n; };
+async function safe(fn, msg = 'That did not work. Check the connection.'){ try { await fn(); return true; } catch (e) { console.error(e); toast(msg, true); return false; } }
+
+async function mergeFlow(id, closeSettings){
+  const others = state.players.filter(p => p.id !== id);
+  const target = await ask(`MERGE ${esc(nameOfId(id).toUpperCase())}`, `<p class="small">Move all of ${esc(nameOfId(id))}'s dives into another diver, then remove ${esc(nameOfId(id))}. Days where both logged keep the other diver's result.</p>`,
+    [...others.map(p => ({label: `${p.name}`, v: p.id, cls: 'teal'})), {label: 'Cancel', v: ''}]);
+  if (!target) return;
+  closeSettings();
+  const ok = await safe(async () => {
+    for (const s of state.scores.filter(x => x.playerId === id)) {
+      if (!entryOf(s.day, target)) await state.backend.setEntry(s.day, target, stored(s, nameOfId(target)));
+      await state.backend.deleteEntry(s.day, id);
+    }
+    await state.backend.deletePlayer(id);
+    if (state.me === id) setMe(target);
+  });
+  if (ok) toast('Merged');
+}
+async function deleteFlow(id, closeSettings){
+  const n = state.scores.filter(s => s.playerId === id).length;
+  const v = await ask('DELETE DIVER', `<p class="small">Delete ${esc(nameOfId(id))}${n ? ` and their ${n} dive${n > 1 ? 's' : ''}` : ''}? This can't be undone.</p>`, [{label: 'Delete', v: 'y', cls: 'pink'}, {label: 'Cancel', v: ''}]);
+  if (v !== 'y') return;
+  closeSettings();
+  if (await safe(async () => { for (const s of state.scores.filter(x => x.playerId === id)) await state.backend.deleteEntry(s.day, id); await state.backend.deletePlayer(id); if (state.me === id) setMe(null); })) toast('Diver deleted');
+}
+const stored = (s, name) => { const e = {score: s.score, emoji: s.emoji, seq: s.seq, name: name ?? s.playerName, ts: s.ts || Date.now()}; if (s.bulk) e.bulk = true; if (s.extra?.length) e.extra = s.extra; return e; };
+
+/* =====================================================================
+   INPUT FLOW
+   ===================================================================== */
 function updatePreview(){
   const r = parseMany($('resultIn').value);
   state.parsed = r && r.results ? r.results : [];
   const pv = $('preview');
+  const check = p => { const s = qsum(p.seq); return p.seq && s !== null && s !== p.score ? `<span class="warn">Heads up: the emoji add up to ${s}, not ${p.score}.</span>` : ''; };
   if (!r) pv.innerHTML = '';
   else if (r.error) pv.innerHTML = `<span class="bad">${esc(r.error)}</span>`;
   else if (state.parsed.length === 1) {
     const p = state.parsed[0];
-    pv.innerHTML = `<span class="ok"><span class="chip">Dive #${p.day}</span><span class="chip">${fmt(p.score)} ${esc(p.emoji)}</span></span><div>${esc(p.seq)}</div>`;
+    pv.innerHTML = `<span class="ok"><span class="chip">Dive #${p.day}</span><span class="chip">${fmt(p.score)} ${esc(p.emoji)}</span></span><div>${esc(p.seq)}</div>${check(p)}`;
   } else {
-    const pid = state.pick;
     pv.innerHTML = `<span class="ok">${state.parsed.length} dives found</span><ul class="bulk">` + state.parsed.map(p => {
-      const old = state.scores.find(s => s.id === `${p.day}_${pid}`);
-      return `<li><b>#${p.day}</b><span>${fmt(p.score)} ${esc(p.emoji)}</span><span>${esc(p.seq)}</span>${old && old.score !== p.score ? `<span class="old">(was ${old.score})</span>` : ''}</li>`;
+      const old = entryOf(p.day, state.pick);
+      return `<li><b>#${p.day}</b><span>${fmt(p.score)} ${esc(p.emoji)}</span><span>${esc(p.seq)}</span>${old && old.score !== p.score ? `<span class="old">(logged: ${old.score})</span>` : ''}</li>`;
     }).join('') + '</ul>';
   }
   $('submitBtn').textContent = state.parsed.length > 1 ? `Log ${state.parsed.length} dives` : 'Log my dive';
   updateSubmit();
 }
-function updateSubmit(){
-  $('submitBtn').disabled = !(state.parsed.length && playerById(state.pick) && !state.adding);
-}
+function updateSubmit(){ $('submitBtn').disabled = !(state.parsed.length && playerById(state.pick) && !state.adding); }
 
-/* in-page picker behaviour */
 function openPicker(open){
   $('pickList').classList.toggle('hidden', !open);
   $('pickBtn').setAttribute('aria-expanded', String(open));
@@ -676,14 +1268,9 @@ function openPicker(open){
 }
 function choose(v){
   openPicker(false);
-  if (v === '__add') {
-    state.adding = true; renderPlayers();
-    setTimeout(() => $('newName').focus(), 50);
-  } else {
-    state.adding = false; state.pick = v; state.me = v;
-    try { localStorage.setItem(ME_KEY, v); } catch {}
-    renderPlayers(); renderAll(); updatePreview();
-  }
+  if (v === '__add') { state.adding = true; renderPlayers(); setTimeout(() => $('newName').focus(), 50); return; }
+  state.adding = false; state.pick = v; setMe(v);
+  renderPlayers(); renderAll(); updatePreview();
 }
 $('pickBtn').addEventListener('click', () => openPicker($('pickList').classList.contains('hidden')));
 $('pickList').addEventListener('click', e => { const li = e.target.closest('li[data-v]'); if (li) choose(li.dataset.v); });
@@ -691,8 +1278,7 @@ $('pickList').addEventListener('keydown', e => {
   const items = [...$('pickList').querySelectorAll('li')];
   let i = items.findIndex(li => li.classList.contains('active'));
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-    e.preventDefault();
-    i = e.key === 'ArrowDown' ? Math.min(items.length - 1, i + 1) : Math.max(0, i - 1);
+    e.preventDefault(); i = e.key === 'ArrowDown' ? Math.min(items.length - 1, i + 1) : Math.max(0, i - 1);
     items.forEach(li => li.classList.remove('active')); items[i].classList.add('active'); items[i].scrollIntoView({block: 'nearest'});
   } else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (items[i]) choose(items[i].dataset.v); }
   else if (e.key === 'Escape') { openPicker(false); $('pickBtn').focus(); }
@@ -700,15 +1286,13 @@ $('pickList').addEventListener('keydown', e => {
 document.addEventListener('click', e => { if (!$('picker').contains(e.target)) openPicker(false); });
 
 async function addMe(){
-  const name = $('newName').value.trim().replace(/\s+/g, ' ');
-  if (!name) { toast('Type your name first.', true); return; }
+  const name = cleanName($('newName').value);
+  if (!name) return;
   const existing = state.players.find(p => p.name.toLowerCase() === name.toLowerCase());
   let id = existing?.id;
-  try {
-    if (!id) id = await state.backend.addPlayer(name);
-  } catch (e) { console.error(e); toast('Could not add you. Check the connection.', true); return; }
-  state.me = id; state.pick = id; state.adding = false;
-  try { localStorage.setItem(ME_KEY, id); } catch {}
+  try { if (!id) id = await state.backend.addPlayer({name, avatar: AVATARS[state.players.length % 8]}); }
+  catch (e) { console.error(e); toast('Could not add you. Check the connection.', true); return; }
+  setMe(id); state.pick = id; state.adding = false;
   $('newName').value = '';
   toast(existing ? `Welcome back, ${name}` : `${name} joined the crew`);
   renderPlayers(); renderAll(); updatePreview();
@@ -722,81 +1306,148 @@ $('pasteBtn').addEventListener('click', async () => {
     if (!t) { toast('Clipboard is empty. Copy your result in Krillion first.', true); return; }
     $('resultIn').value = t; updatePreview();
     if (!state.parsed.length) toast('That does not look like a Krillion result.', true);
-  } catch {
-    $('resultIn').focus();
-    toast('Long-press the box and tap Paste.', true);
-  }
+  } catch { $('resultIn').focus(); toast('Long-press the box and tap Paste.', true); }
 });
 $('resultIn').addEventListener('input', updatePreview);
 
 $('submitBtn').addEventListener('click', async () => {
-  const list = state.parsed, pid = state.pick;
-  const player = playerById(pid);
+  const list = state.parsed, pid = state.pick, player = playerById(pid);
   if (!list.length || !player) return;
-  const changed = list.filter(p => { const o = state.scores.find(s => s.id === `${p.day}_${pid}`); return o && o.score !== p.score; });
-  if (changed.length) {
-    const msg = list.length === 1
-      ? `You already logged ${state.scores.find(s => s.id === `${list[0].day}_${pid}`).score} for dive #${list[0].day}. Replace it with ${list[0].score}?`
-      : `${changed.length} of these dives already have a different score logged. Replace them?`;
-    if (!confirm(msg)) return;
+  const plan = [], conflicts = []; let skipped = 0;
+  for (const p of list) {
+    const old = entryOf(p.day, pid);
+    if (!old) plan.push({p, mode: 'new'});
+    else if (old.score === p.score && old.seq === p.seq) skipped++;
+    else conflicts.push({p, old});
   }
+  if (conflicts.length) {
+    const res = await resolveConflicts(conflicts);
+    if (!res) return;
+    res.forEach((mode, i) => { if (mode === 'replace' || mode === 'both') plan.push({...conflicts[i], mode}); });
+  }
+  if (!plan.length) { toast(skipped ? 'Already logged. Nothing new.' : 'Nothing changed.'); if (skipped) { $('resultIn').value = ''; updatePreview(); } return; }
+  const before = playerStats(pid), dayBefore = plan.map(x => x.p.day);
   $('submitBtn').disabled = true;
-  try {
-    await Promise.all(list.map(p => state.backend.saveScore({id: `${p.day}_${pid}`, day: p.day, score: p.score, emoji: p.emoji, seq: p.seq, playerId: pid, playerName: player.name, ts: Date.now()})));
-    state.pinned = false;
-    $('resultIn').value = ''; updatePreview();
-    toast(list.length === 1 ? `Dive #${list[0].day} logged ${list[0].emoji}` : `${list.length} dives logged 🦐`);
-    renderAll();
-    $('boardAnchor').scrollIntoView({behavior: 'smooth', block: 'start'});
-  } catch (e) { console.error(e); toast('Could not log the dive. Check the connection.', true); updateSubmit(); }
+  const ok = await safe(() => Promise.all(plan.map(({p, mode, old}) => {
+    if (mode === 'both') return state.backend.setEntry(p.day, pid, {...stored(old, player.name), extra: [...(old.extra || []), {score: p.score, emoji: p.emoji, seq: p.seq, ts: Date.now()}]});
+    const e = {score: p.score, emoji: p.emoji, seq: p.seq, name: player.name, ts: Date.now()};
+    if (list.length > 1) e.bulk = true;
+    return state.backend.setEntry(p.day, pid, e);
+  })), 'Could not log the dive. Check the connection.');
+  if (!ok) { updateSubmit(); return; }
+  setMe(pid); state.pinned = false;
+  $('resultIn').value = ''; updatePreview();
+  const last = plan[plan.length - 1].p;
+  toast(plan.length === 1 ? `Dive #${last.day} logged ${last.emoji}` : `${plan.length} dives logged 🦐`);
+  bloop('log');
+  renderAll();
+  $('boardAnchor').scrollIntoView({behavior: settings.anim ? 'smooth' : 'auto', block: 'start'});
+  setTimeout(() => celebrate(before, dayBefore), 400);
 });
 
-$('board').addEventListener('click', async e => {
-  const id = e.target.dataset?.del;
-  if (!id) return;
-  if (!confirm('Remove your score for this dive?')) return;
-  try { await state.backend.deleteScore(id); toast('Score removed'); } catch { toast('Could not remove it.', true); }
+function celebrate(before, loggedDays){
+  const after = playerStats(state.pick);
+  const fresh = after.badges.filter(b => !before.badges.includes(b));
+  const latest = days().slice(-1)[0];
+  const today = loggedDays.includes(latest) ? ranked(latest) : [];
+  const mine = today.find(r => r.playerId === state.pick);
+  let msg = null;
+  if (after.top > before.top && before.played) msg = `NEW PERSONAL BEST: ${after.top}`;
+  else if (mine && mine.rank === 1 && today.length >= 2) msg = 'DEEPEST DIVER TODAY';
+  if (fresh.length) { const b = BADGES.find(x => x.id === fresh[0]); setTimeout(() => toast(`Badge unlocked: ${b.i} ${b.n}`), msg ? 2800 : 0); }
+  if (msg) { toast(msg); burst(); }
+}
+
+/* reactions, removal, nudges, chat, player files */
+document.addEventListener('click', async e => {
+  const t = e.target;
+  const open = t.closest('[data-rxopen]');
+  if (open) { state.rxOpen = state.rxOpen === open.dataset.rxopen ? null : open.dataset.rxopen; renderBoard(); return; }
+  const r = t.closest('[data-react]');
+  if (r) {
+    if (!playerById(state.me)) return toast('Pick your name first.', true);
+    const [day, pid] = r.dataset.react.split('|'), emo = r.dataset.emo;
+    const cur = state.days[day]?.reactions?.[pid]?.[state.me];
+    state.rxOpen = null;
+    await safe(() => state.backend.setReaction(Number(day), pid, state.me, cur === emo ? null : emo));
+    bloop('pop'); return;
+  }
+  const del = t.closest('[data-del]');
+  if (del) {
+    const [day, pid] = del.dataset.del.split('|');
+    const v = await ask('REMOVE SCORE', `<p class="small">Remove ${pid === state.me ? 'your' : esc(nameOfId(pid)) + "'s"} score for dive #${day}?</p>`, [{label: 'Remove', v: 'y', cls: 'pink'}, {label: 'Cancel', v: ''}]);
+    if (v === 'y' && await safe(() => state.backend.deleteEntry(Number(day), pid))) toast('Score removed');
+    return;
+  }
+  const nudge = t.closest('[data-nudge]');
+  if (nudge) {
+    const day = currentDay(), rows = ranked(day);
+    const msg = pick(NUDGES).replace('{name}', nameOfId(nudge.dataset.nudge)).replace('{day}', day).replace('{top}', nameOf(rows[0])).replace('{score}', rows[0].score).replace('{url}', siteUrl());
+    openWhatsApp(msg); return;
+  }
+  const dc = t.closest('[data-delchat]');
+  if (dc) { await safe(() => state.backend.deleteComment(currentDay(), dc.dataset.delchat)); return; }
+  const h = t.closest('[data-h2h]');
+  if (h) { state.h2h[+h.dataset.h2h] = h.dataset.id; renderH2H(); return; }
+  const pl = t.closest('[data-player]');
+  if (pl && !t.closest('.overlay')) { openPlayer(pl.dataset.player); return; }
 });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches?.('.pcard[data-player]')) openPlayer(e.target.dataset.player); });
+
+async function sendChat(){
+  const text = $('chatIn').value.trim().slice(0, 140), day = currentDay();
+  if (!text) return;
+  if (!playerById(state.me)) return toast('Pick your name first.', true);
+  if (day == null) return toast('Log a dive first.', true);
+  const ts = Date.now();
+  if (await safe(() => state.backend.addComment(day, `c${ts}${state.me}`, {pid: state.me, name: nameOfId(state.me), text, ts}))) { $('chatIn').value = ''; bloop('pop'); }
+}
+$('chatBtn').addEventListener('click', sendChat);
+$('chatIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendChat(); } });
 
 function go(delta){
-  const d = days(), i = d.indexOf(currentDay());
-  const n = d[i + delta];
+  const d = days(), i = d.indexOf(currentDay()), n = d[i + delta];
   if (n == null) return;
-  state.viewDay = n; state.pinned = n !== d[d.length - 1];
+  state.viewDay = n; state.pinned = n !== d[d.length - 1]; state.rxOpen = null;
   renderHero(n); renderBoard();
 }
 $('prevDay').addEventListener('click', () => go(-1));
 $('nextDay').addEventListener('click', () => go(1));
 
-/* ---------------- sharing ---------------- */
+/* =====================================================================
+   SHARING
+   ===================================================================== */
 function shareText(){
-  const day = currentDay();
-  const rows = ranked(day);
-  const url = SITE_URL || (location.origin + location.pathname);
-  return [`🌊 *Krillion Day ${day} Update!* 🌊`,
-    ...rows.map(r => `${medal(r.rank)} ${nameOf(r)}: ${r.score} ${r.emoji || '🦐'}`),
-    `Check the full stats: ${url}`].join('\n');
+  const day = currentDay(), rows = ranked(day);
+  const lines = [`🌊 *Krillion Day ${day} Update!* 🌊`, ...rows.map(r => `${medal(r.rank)} ${nameOf(r)}: ${r.score} ${r.emoji || '🦐'}${settings.waSeq && r.seq ? '  ' + r.seq : ''}`)];
+  const latest = days().slice(-1)[0];
+  const missing = day === latest ? state.players.filter(p => !entryOf(day, p.id)).map(p => p.name) : [];
+  if (settings.waMissing && missing.length) lines.push(`🏖️ Still on the surface: ${missing.join(', ')}`);
+  if (settings.waRoast && rows.length >= 2) lines.push(pick(ROASTS).replace('{first}', nameOf(rows[0])).replace('{last}', nameOf(rows[rows.length - 1])));
+  lines.push(`Check the full stats: ${siteUrl()}`);
+  return lines.join('\n');
 }
-// Phones: open the WhatsApp app directly (whatsapp:// keeps emoji intact and works on iPhone and Android).
-// Computers: WhatsApp's web link. wa.me is avoided because its redirect breaks emoji.
+// Phones open the WhatsApp app directly (whatsapp:// keeps emoji intact). Computers use WhatsApp's web link.
+// wa.me is avoided because its redirect breaks emoji.
 const IS_PHONE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-$('shareBtn').addEventListener('click', () => {
-  const text = encodeURIComponent(shareText());
-  if (IS_PHONE) { location.href = 'whatsapp://send?text=' + text; return; }
-  const link = 'https://api.whatsapp.com/send?text=' + text;
-  const w = window.open(link, '_blank');
-  if (!w) location.href = link;
-});
+function openWhatsApp(text){
+  const t = encodeURIComponent(text);
+  if (IS_PHONE) { location.href = 'whatsapp://send?text=' + t; return; }
+  const w = window.open('https://api.whatsapp.com/send?text=' + t, '_blank');
+  if (!w) location.href = 'https://api.whatsapp.com/send?text=' + t;
+}
+$('shareBtn').addEventListener('click', () => openWhatsApp(shareText()));
 $('copyBtn').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(shareText()); toast('Summary copied'); }
-  catch { toast('Copy blocked by the browser.', true); }
+  try { await navigator.clipboard.writeText(shareText()); toast('Summary copied'); } catch { toast('Copy blocked by the browser.', true); }
 });
 
-/* ---------------- tabs ---------------- */
+/* =====================================================================
+   TABS, TOASTS, SOUND, FAUNA
+   ===================================================================== */
 document.querySelectorAll('nav.tabs button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
 function showTab(t){
   document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
-  ['today','log','stats'].forEach(k => $('tab-' + k).classList.toggle('hidden', k !== t));
+  ['today', 'log', 'stats', 'abyss'].forEach(k => $('tab-' + k).classList.toggle('hidden', k !== t));
   window.scrollTo({top: 0});
 }
 $('logList').addEventListener('click', e => openDay(e.target.closest('li[data-day]')));
@@ -808,57 +1459,118 @@ function openDay(li){
   showTab('today'); renderHero(n); renderBoard();
   setTimeout(() => $('boardAnchor').scrollIntoView({block: 'start'}), 30);
 }
+$('gearBtn').addEventListener('click', openSettings);
 
-/* ---------------- misc ui ---------------- */
 let tt;
 function toast(msg, bad){
   const el = $('toast'); el.textContent = msg; el.classList.toggle('bad', !!bad); el.classList.add('show');
   clearTimeout(tt); tt = setTimeout(() => el.classList.remove('show'), 2600);
 }
 function setStatus(kind, text){ $('status').className = 'status ' + kind; $('statusText').textContent = text; }
+function showAlert(msg){ $('alertBar').textContent = msg; $('alertBar').classList.toggle('hidden', !msg); }
 
+let ac;
+function bloop(kind){
+  if (!settings.sound) return;
+  try {
+    ac ||= new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain(), f = kind === 'pop' ? 660 : kind === 'live' ? 520 : 392, t = ac.currentTime;
+    o.type = 'square'; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 2, t + .12);
+    g.gain.setValueAtTime(.05, t); g.gain.exponentialRampToValueAtTime(.0001, t + .2);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + .22);
+  } catch {}
+}
+function burst(){
+  if (!settings.anim || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = $('heroEmoji').getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  for (let i = 0; i < 26; i++) {
+    const b = document.createElement('div'), a = Math.random() * Math.PI * 2, d = 60 + Math.random() * 140, s = 6 + Math.random() * 14;
+    b.className = 'burst';
+    Object.assign(b.style, {left: cx + 'px', top: cy + 'px', width: s + 'px', height: s + 'px', borderColor: Math.random() < .5 ? 'var(--teal)' : 'var(--pink)'});
+    b.style.setProperty('--dx', Math.cos(a) * d + 'px'); b.style.setProperty('--dy', Math.sin(a) * d - 80 + 'px');
+    document.body.appendChild(b); setTimeout(() => b.remove(), 1400);
+  }
+}
 function fauna(){
   const f = $('fauna');
   const shape = ['..XXXX....X.','.XXXXXXX.XX.','XXXXXXXXXXX.','XXXXXXXXXXX.','.XXXXXXX.XX.','..XXXX....X.'];
   let rects = '';
   shape.forEach((row, y) => [...row].forEach((c, x) => { if (c === 'X') rects += `<rect x="${x}" y="${y}" width="1" height="1"/>`; }));
   for (let i = 0; i < 6; i++) {
-    const d = document.createElement('div');
-    const s = 3 + Math.floor(Math.random() * 3);
+    const d = document.createElement('div'), s = 3 + Math.floor(Math.random() * 3);
     d.className = 'fish' + (i % 2 ? ' rev' : '');
-    d.style.top = (40 + Math.random() * 55) + 'vh';
-    d.style.animationDuration = (38 + Math.random() * 40) + 's';
-    d.style.animationDelay = (-Math.random() * 60) + 's';
+    d.style.top = (40 + Math.random() * 55) + 'vh'; d.style.animationDuration = (38 + Math.random() * 40) + 's'; d.style.animationDelay = (-Math.random() * 60) + 's';
     d.innerHTML = `<svg width="${12 * s}" height="${6 * s}" viewBox="0 0 12 6" fill="rgba(3,9,16,.75)">${rects}</svg>`;
     f.appendChild(d);
   }
   for (let i = 0; i < 10; i++) {
-    const b = document.createElement('div');
-    const s = 4 + Math.random() * 7;
+    const b = document.createElement('div'), s = 4 + Math.random() * 7;
     b.className = 'bub';
-    Object.assign(b.style, {left: Math.random() * 100 + 'vw', width: s + 'px', height: s + 'px',
-      animationDuration: (14 + Math.random() * 18) + 's', animationDelay: (-Math.random() * 30) + 's'});
+    Object.assign(b.style, {left: Math.random() * 100 + 'vw', width: s + 'px', height: s + 'px', animationDuration: (14 + Math.random() * 18) + 's', animationDelay: (-Math.random() * 30) + 's'});
     f.appendChild(b);
   }
 }
 
-/* ---------------- boot ---------------- */
+/* live pop-ups when someone else logs or talks */
+function liveNotices(){
+  const ids = new Set(state.scores.map(s => s.id));
+  const chats = new Set(); Object.entries(state.days).forEach(([d, x]) => Object.keys(x.comments || {}).forEach(k => chats.add(d + k)));
+  if (state.seen) {
+    const fresh = state.scores.filter(s => !state.seen.has(s.id) && s.playerId !== state.me && !s.bulk);
+    if (fresh.length) { const s = fresh[fresh.length - 1]; toast(`${avatarOf(s.playerId)} ${nameOf(s)} just surfaced with ${s.score} ${s.emoji}`); bloop('live'); }
+    else {
+      for (const [d, x] of Object.entries(state.days)) for (const [k, c] of Object.entries(x.comments || {})) {
+        if (!state.seenChat.has(d + k) && c.pid !== state.me) { toast(`💬 ${nameOfId(c.pid)}: ${c.text.slice(0, 40)}`); bloop('pop'); }
+      }
+    }
+  }
+  state.seen = ids; state.seenChat = chats;
+}
+
+async function migrate(){
+  if (state.migrated) return; state.migrated = true;
+  const old = await state.backend.legacy();
+  if (!old.length) return;
+  for (const s of old) {
+    const d = Number(s.day);
+    try {
+      if (!state.days[d]?.entries?.[s.playerId]) await state.backend.setEntry(d, s.playerId, {score: Number(s.score), emoji: s.emoji || '🦐', seq: s.seq || '', name: s.playerName || '', ts: s.ts || Date.now()});
+      await state.backend.dropLegacy(s.id);
+    } catch (e) { console.error(e); return; }
+  }
+}
+
+/* Android share target: results shared into the installed app arrive in the URL */
+function incomingShare(){
+  const q = new URLSearchParams(location.search);
+  const text = [q.get('title'), q.get('text'), q.get('url')].filter(Boolean).join('\n');
+  if (!/krillion/i.test(text)) return;
+  $('resultIn').value = text; updatePreview();
+  history.replaceState(null, '', location.pathname);
+  toast(playerById(state.pick) ? 'Result received. Tap Log my dive.' : 'Result received. Pick your name, then log it.');
+}
+
+/* =====================================================================
+   BOOT
+   ===================================================================== */
 (async function boot(){
-  fauna();
+  applySettings(); fauna();
   $('ver').textContent = `KRILLION CREW V${APP_VERSION}`;
   const demo = !firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith('YOUR_');
   if (demo) {
     state.backend = localBackend();
-    setStatus('demo', 'DEMO');
-    $('demoBar').classList.remove('hidden');
-    $('seedBtn').onclick = () => { state.backend.seed(); state.me = 'demo0'; state.adding = false; try { localStorage.setItem(ME_KEY, 'demo0'); } catch {} renderPlayers(); renderAll(); toast('Sample dives loaded'); };
-    $('wipeBtn').onclick = () => { if (confirm('Clear all demo data on this device?')) { state.backend.wipe(); toast('Demo data cleared'); } };
+    setStatus('demo', 'DEMO'); $('demoBar').classList.remove('hidden');
+    $('seedBtn').onclick = () => { state.backend.seed(); setMe('demo0'); state.adding = false; renderPlayers(); renderAll(); toast('Sample dives loaded'); };
+    $('wipeBtn').onclick = async () => { if (await ask('CLEAR DEMO', '<p class="small">Clear all demo data on this device?</p>', [{label: 'Clear', v: 'y', cls: 'pink'}, {label: 'Cancel', v: ''}]) === 'y') { state.backend.wipe(); toast('Demo data cleared'); } };
   } else {
     try { state.backend = await firebaseBackend(firebaseConfig); }
-    catch (e) { console.error(e); setStatus('err', 'OFFLINE'); toast('Could not load the database. Check your config.', true); return; }
+    catch (e) { console.error(e); setStatus('err', 'OFFLINE'); toast('Could not load the database.', true); return; }
   }
+  state.backend.onMeta(m => { state.meta = m; renderAll(); });
   state.backend.onPlayers(p => { state.players = p; renderPlayers(); renderAll(); });
-  state.backend.onScores(s => { state.scores = s.map(x => ({...x, day: Number(x.day), score: Number(x.score)})); renderAll(); });
+  state.backend.onDays(d => { state.days = d; rebuild(); liveNotices(); renderAll(); updatePreview(); migrate(); });
+  incomingShare();
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
 </script>
 </body>
