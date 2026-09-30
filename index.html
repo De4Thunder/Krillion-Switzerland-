@@ -414,7 +414,7 @@ const firebaseConfig = {
   measurementId: "G-W55VGYSYED"
 };
 const SITE_URL = "";                 // leave empty to use this page's own address
-const APP_VERSION = "2.0";
+const APP_VERSION = "2.1";
 const FB_VER = "10.12.2";
 
 /* =====================================================================
@@ -537,27 +537,33 @@ async function firebaseBackend(cfg){
   const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app.js`);
   const F = await import(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore.js`);
   const db = F.getFirestore(initializeApp(cfg));
-  const onErr = err => {
-    console.error(err); setStatus('err', 'OFFLINE');
-    if (err.code === 'permission-denied') showAlert('The database said no. The Firestore rules need updating: paste the new rules from SETUP.md in Firebase > Firestore > Rules.');
+  const onErr = what => err => {
+    console.error(what, err); setStatus('err', 'OFFLINE');
+    if (err.code === 'permission-denied') showAlert(`The database refused access to "${what}". In Firebase > Firestore > Rules, check that the newest rules from SETUP.md are pasted and that you tapped Publish.`);
     else toast('Connection problem. Retrying.', true);
   };
-  const dref = d => F.doc(db, 'days', String(d));
-  const touch = async (day, patch) => { const b = F.writeBatch(db); b.set(dref(day), {day: Number(day)}, {merge: true}); b.update(dref(day), patch); await b.commit(); };
+  const okSnap = () => { setStatus('live', 'LIVE'); showAlert(''); };
   const docs = s => s.docs.map(d => ({id: d.id, ...d.data()}));
+  const dref = d => F.doc(db, 'days', String(d));
+  // One write per change that touches only the named field, so the rules always see the day number.
+  const nest = (path, v) => path.reduceRight((acc, k) => ({[k]: acc}), v);
+  const put = (day, path, value) => F.setDoc(dref(day), {day: Number(day), ...nest(path, value)}, {mergeFields: ['day', new F.FieldPath(...path)]});
   return {
     mode: 'live',
-    onPlayers(cb){ F.onSnapshot(F.collection(db, 'players'), s => { setStatus('live', 'LIVE'); cb(docs(s)); }, onErr); },
-    onDays(cb){ F.onSnapshot(F.collection(db, 'days'), s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, onErr); },
-    onMeta(cb){ F.onSnapshot(F.collection(db, 'meta'), s => { const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, onErr); },
+    onPlayers(cb){ F.onSnapshot(F.collection(db, 'players'), s => { okSnap(); cb(docs(s)); }, onErr('players')); },
+    onDays(cb){ F.onSnapshot(F.collection(db, 'days'), s => { okSnap(); const o = {}; s.docs.forEach(d => o[d.id] = d.data()); cb(o); }, onErr('days')); },
+    onMeta(cb){
+      const o = {};
+      ['admin', 'group'].forEach(id => F.onSnapshot(F.doc(db, 'meta', id), s => { if (s.exists()) o[id] = s.data(); else delete o[id]; cb({...o}); }, onErr('meta/' + id)));
+    },
     async addPlayer(p){ return (await F.addDoc(F.collection(db, 'players'), {...p, ts: Date.now()})).id; },
     async updatePlayer(id, patch){ await F.updateDoc(F.doc(db, 'players', id), patch); },
     async deletePlayer(id){ await F.deleteDoc(F.doc(db, 'players', id)); },
-    async setEntry(day, pid, e){ await touch(day, {[`entries.${pid}`]: e}); },
-    async deleteEntry(day, pid){ await touch(day, {[`entries.${pid}`]: F.deleteField()}); },
-    async setReaction(day, pid, who, emo){ await touch(day, {[`reactions.${pid}.${who}`]: emo || F.deleteField()}); },
-    async addComment(day, key, c){ await touch(day, {[`comments.${key}`]: c}); },
-    async deleteComment(day, key){ await touch(day, {[`comments.${key}`]: F.deleteField()}); },
+    async setEntry(day, pid, e){ await put(day, ['entries', pid], e); },
+    async deleteEntry(day, pid){ await put(day, ['entries', pid], F.deleteField()); },
+    async setReaction(day, pid, who, emo){ await put(day, ['reactions', pid, who], emo || F.deleteField()); },
+    async addComment(day, key, c){ await put(day, ['comments', key], c); },
+    async deleteComment(day, key){ await put(day, ['comments', key], F.deleteField()); },
     async setMeta(id, data){ await F.setDoc(F.doc(db, 'meta', id), data, {merge: true}); },
     async legacy(){ try { return docs(await F.getDocs(F.collection(db, 'scores'))); } catch { return []; } },
     async dropLegacy(id){ await F.deleteDoc(F.doc(db, 'scores', id)); }
