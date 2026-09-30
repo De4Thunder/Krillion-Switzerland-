@@ -375,6 +375,7 @@ footer.ver{margin-top:28px;text-align:center;font-family:var(--lab);font-size:10
     <h2 class="sec"><span>HEAD TO HEAD</span></h2>
     <div class="panel" id="h2h"></div>
     <h2 class="sec"><span>ALL-TIME</span></h2>
+    <button class="btn teal wide" id="exportBtn" style="margin-bottom:12px">📤 Export crew card</button>
     <div class="cards" id="cards"></div>
     <p class="note">Ranked by average score. A win needs at least 2 divers that day, ties share the win. 👑 = most wins in the last 7 dives. Tap a diver for their full log.</p>
   </main>
@@ -414,7 +415,7 @@ const firebaseConfig = {
   measurementId: "G-W55VGYSYED"
 };
 const SITE_URL = "";                 // leave empty to use this page's own address
-const APP_VERSION = "2.1";
+const APP_VERSION = "2.2";
 const FB_VER = "10.12.2";
 
 /* =====================================================================
@@ -1144,6 +1145,198 @@ function openPlayer(id){
     <h4 class="sec sm"><span>FULL LOG</span></h4>
     <ul class="hist">${hist.map(s => `<li><b>#${s.day}</b><span>${fmt(s.score)} ${esc(s.emoji)}</span><span>${medal(ranked(s.day).find(r => r.playerId === id)?.rank || 0)} ${esc(s.seq)}</span></li>`).join('') || '<li class="small">No dives yet.</li>'}</ul>`, {sheet: true});
 }
+
+/* =====================================================================
+   EXPORT: shareable crew card (PNG)
+   ===================================================================== */
+const EMO = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+const plain = h => { const d = document.createElement('div'); d.innerHTML = h; return d.textContent.replace(/\s+/g, ' ').trim(); };
+function wrapText(ctx, text, maxW){
+  const lines = []; let cur = '';
+  for (const w of text.split(' ')) {
+    const t = cur ? cur + ' ' + w : w;
+    if (cur && ctx.measureText(t).width > maxW) { lines.push(cur); cur = w; } else cur = t;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+function fitText(ctx, text, maxW){
+  if (ctx.measureText(text).width <= maxW) return text;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+  return t + '…';
+}
+
+async function buildCard(awIdx){
+  await Promise.all(['"Press Start 2P"', 'Silkscreen', 'VT323'].map(f => document.fonts.load(`32px ${f}`).catch(() => {})));
+  const PX = '"Press Start 2P", monospace', LB = 'Silkscreen, "Press Start 2P", monospace', MN = 'VT323, "Courier New", monospace';
+  const st = allStats().filter(p => p.played > 0);
+  const a = abyss();
+  const aw = a && a.aw.length ? a.aw[awIdx % a.aw.length] : null;
+  const capt = captain();
+  const W = 1080, P = 60, ROW = 112, TOP = 400;
+  const dayList = days(), latest = dayList[dayList.length - 1];
+
+  // measure the funny stat first so the card can be the right height
+  const m = document.createElement('canvas').getContext('2d');
+  let awP = [], awS = [];
+  if (aw) {
+    m.font = `54px ${MN}`; awP = wrapText(m, plain(aw.p), W - 2 * P - 190);
+    m.font = `38px ${MN}`; awS = wrapText(m, plain(aw.s), W - 2 * P - 190);
+  }
+  const awardH = aw ? 120 + awP.length * 58 + awS.length * 44 : 0;
+  const yStrip = TOP + st.length * ROW + 50, yAward = yStrip + 190 + 50;
+  const H = yStrip + 190 + (aw ? 50 + awardH : 0) + 140;
+
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+
+  // the sea
+  const g = x.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#2e4254'); g.addColorStop(.32, '#1d3144'); g.addColorStop(.64, '#10202f'); g.addColorStop(1, '#07111c');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const sun = x.createRadialGradient(W * .86, 300, 0, W * .86, 300, 340);
+  sun.addColorStop(0, 'rgba(227,179,65,.28)'); sun.addColorStop(1, 'rgba(227,179,65,0)');
+  x.fillStyle = sun; x.fillRect(0, 0, W, H);
+  x.strokeStyle = 'rgba(140,220,240,.3)'; x.lineWidth = 2;
+  for (let i = 0; i < 26; i++) { x.beginPath(); x.arc(Math.random() * W, Math.random() * H, 4 + Math.random() * 9, 0, Math.PI * 2); x.stroke(); }
+  x.fillStyle = 'rgba(0,0,0,.09)';
+  for (let yy = 0; yy < H; yy += 4) x.fillRect(0, yy, W, 1);
+
+  // header
+  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.font = `84px ${PX}`;
+  x.fillStyle = '#ff3d6e'; x.fillText('KRILLION', P - 6, 140);
+  x.fillStyle = '#5ce1f0'; x.fillText('KRILLION', P + 6, 140);
+  x.fillStyle = '#e6fbff'; x.fillText('KRILLION', P, 140);
+  x.save(); x.textAlign = 'right'; x.font = `100px ${EMO}`; x.shadowColor = 'rgba(255,42,85,.8)'; x.shadowBlur = 34; x.fillText('🦐', W - P, 140); x.restore();
+  x.font = `26px ${LB}`; x.fillStyle = '#88a2b4';
+  x.fillText((state.meta.group?.title || 'Crew dive log').toUpperCase().slice(0, 30), P, 200);
+  x.fillStyle = '#5ce1f0';
+  x.fillText(`${dayList.length} DIVES PLAYED | THROUGH #${latest}`, P, 246);
+
+  const sec = (label, y) => {
+    x.textAlign = 'left'; x.textBaseline = 'alphabetic'; x.font = `26px ${LB}`; x.fillStyle = '#e9f2f6'; x.fillText(label, P, y);
+    const w = x.measureText(label).width;
+    x.save(); x.setLineDash([10, 8]); x.strokeStyle = 'rgba(150,195,215,.3)'; x.lineWidth = 3;
+    x.beginPath(); x.moveTo(P + w + 24, y - 9); x.lineTo(W - P, y - 9); x.stroke(); x.restore();
+  };
+  sec('ALL-TIME LEADERBOARD', 318);
+
+  // column headers
+  const COL = {avg: 640, wins: 770, best: 890, dives: 995};
+  x.textAlign = 'center'; x.font = `20px ${LB}`; x.fillStyle = '#88a2b4';
+  x.fillText('AVG', COL.avg, 372); x.fillText('WINS', COL.wins, 372); x.fillText('BEST', COL.best, 372); x.fillText('DIVES', COL.dives, 372);
+
+  // rows
+  x.textBaseline = 'middle';
+  st.forEach((p, i) => {
+    const y0 = TOP + i * ROW, cy = y0 + ROW / 2, me = p.id === state.me;
+    if (me) {
+      const gg = x.createLinearGradient(P, 0, W - P, 0);
+      gg.addColorStop(0, 'rgba(255,61,110,.22)'); gg.addColorStop(1, 'rgba(255,61,110,0)');
+      x.fillStyle = gg; x.fillRect(P - 10, y0 + 6, W - 2 * P + 20, ROW - 12);
+      x.fillStyle = '#ff3d6e'; x.fillRect(P - 10, y0 + 6, 6, ROW - 12);
+    }
+    x.textAlign = 'center';
+    if (i < 3) { x.font = `54px ${EMO}`; x.fillStyle = '#fff'; x.fillText(['🥇', '🥈', '🥉'][i], P + 40, cy + 4); }
+    else { x.font = `24px ${PX}`; x.fillStyle = '#88a2b4'; x.fillText(String(i + 1), P + 40, cy + 2); }
+    x.textAlign = 'left'; x.font = `52px ${EMO}`; x.fillStyle = '#fff'; x.fillText(avatarOf(p.id), P + 100, cy + 4);
+    x.font = `50px ${MN}`; x.fillStyle = me ? '#ffb0c2' : '#e9f2f6';
+    const nm = fitText(x, p.name, 335 - (capt === p.id ? 56 : 0)), nmW = x.measureText(nm).width;
+    x.fillText(nm, P + 170, cy + 2);
+    if (capt === p.id) { x.font = `40px ${EMO}`; x.fillText('👑', P + 170 + nmW + 12, cy + 2); }
+    x.textAlign = 'center';
+    x.save(); x.font = `30px ${PX}`; x.fillStyle = '#5ce1f0'; x.shadowColor = 'rgba(92,225,240,.6)'; x.shadowBlur = 14;
+    x.fillText(String(Math.round(p.avg)), COL.avg, cy + 2); x.restore();
+    x.font = `24px ${PX}`; x.fillStyle = '#e9f2f6';
+    x.fillText(String(p.wins), COL.wins, cy + 2); x.fillText(fmt(p.top), COL.best, cy + 2); x.fillText(String(p.played), COL.dives, cy + 2);
+    if (i < st.length - 1) {
+      x.save(); x.setLineDash([8, 8]); x.strokeStyle = 'rgba(150,195,215,.16)'; x.lineWidth = 2;
+      x.beginPath(); x.moveTo(P, y0 + ROW); x.lineTo(W - P, y0 + ROW); x.stroke(); x.restore();
+    }
+  });
+
+  // crew totals
+  const total = state.scores.reduce((t, s) => t + s.score, 0), n = state.scores.length;
+  const bw = (W - 2 * P - 40) / 3;
+  [['CREW DEPTH', `-${fmt(total)}m`, 'all dives together'],
+   ['DIVES LOGGED', fmt(n), `${st.length} diver${st.length > 1 ? 's' : ''}, ${dayList.length} days`],
+   ['CREW AVERAGE', fmt(Math.round(total / n)), 'per dive']].forEach(([lab, val, sub], i) => {
+    const bx = P + i * (bw + 20);
+    x.fillStyle = 'rgba(7,17,28,.6)'; x.fillRect(bx, yStrip, bw, 190);
+    x.strokeStyle = '#22394d'; x.lineWidth = 3; x.strokeRect(bx, yStrip, bw, 190);
+    x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+    x.font = `18px ${LB}`; x.fillStyle = '#88a2b4'; x.fillText(lab, bx + bw / 2, yStrip + 50);
+    let fs = 30; x.font = `${fs}px ${PX}`;
+    while (x.measureText(val).width > bw - 36 && fs > 14) { fs -= 2; x.font = `${fs}px ${PX}`; }
+    x.fillStyle = '#5ce1f0'; x.save(); x.shadowColor = 'rgba(92,225,240,.5)'; x.shadowBlur = 12; x.fillText(val, bx + bw / 2, yStrip + 110); x.restore();
+    x.font = `30px ${MN}`; x.fillStyle = '#88a2b4'; x.fillText(fitText(x, sub, bw - 24), bx + bw / 2, yStrip + 158);
+  });
+
+  // one funny stat from the Abyss
+  if (aw) {
+    x.fillStyle = 'rgba(7,17,28,.6)'; x.fillRect(P, yAward, W - 2 * P, awardH);
+    x.strokeStyle = '#ff3d6e'; x.lineWidth = 3; x.strokeRect(P, yAward, W - 2 * P, awardH);
+    x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+    x.font = `20px ${LB}`; x.fillStyle = '#88a2b4'; x.fillText('FROM THE ABYSS', P + 30, yAward + 44);
+    x.font = `84px ${EMO}`; x.fillStyle = '#fff'; x.fillText(aw.i, P + 30, yAward + 160);
+    const tx = P + 160;
+    x.font = `26px ${LB}`; x.fillStyle = '#5ce1f0'; x.fillText(aw.t, tx, yAward + 94);
+    let yy = yAward + 94;
+    x.font = `54px ${MN}`; x.fillStyle = '#e9f2f6';
+    awP.forEach(l => { yy += 58; x.fillText(l, tx, yy); });
+    x.font = `38px ${MN}`; x.fillStyle = '#88a2b4';
+    awS.forEach(l => { yy += 44; x.fillText(l, tx, yy); });
+  }
+
+  // footer
+  x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  x.font = `22px ${LB}`; x.fillStyle = '#88a2b4'; x.fillText(siteUrl().replace(/^https?:\/\//, ''), W / 2, H - 70);
+  x.font = `16px ${LB}`; x.fillStyle = '#4d6679'; x.fillText(`KRILLION CREW V${APP_VERSION}`, W / 2, H - 36);
+
+  return new Promise(res => c.toBlob(res, 'image/png'));
+}
+
+let cardBlob = null, cardUrl = null, cardIdx = 0;
+async function refreshCard(ov){
+  try { cardBlob = await buildCard(cardIdx); } catch (err) { console.error(err); toast('Could not build the card.', true); return; }
+  if (!ov.isConnected) return;
+  if (cardUrl) URL.revokeObjectURL(cardUrl);
+  cardUrl = URL.createObjectURL(cardBlob);
+  ov.querySelector('#cardImg').src = cardUrl;
+}
+const cardName = () => `krillion-crew-stats-dive-${days().slice(-1)[0]}.png`;
+function saveCard(){
+  const a = document.createElement('a'); a.href = cardUrl; a.download = cardName();
+  document.body.appendChild(a); a.click(); a.remove(); toast('Image saved');
+}
+$('exportBtn').addEventListener('click', () => {
+  if (!state.scores.length) return toast('Log some dives first.', true);
+  cardIdx = Math.floor(Math.random() * 1000);
+  const {ov} = overlay(`<div class="ov-head"><h3>CREW CARD</h3><button class="x" data-close aria-label="Close">✕</button></div>
+    <img id="cardImg" alt="Crew stats card" style="width:100%;display:block;border:2px solid #22394d;background:#050d16;min-height:180px">
+    <div style="display:grid;gap:8px;margin-top:12px">
+      <button class="btn wa" data-act="share">📤 Share image</button>
+      <button class="btn teal" data-act="save">Save image</button>
+      <button class="btn ghost" data-act="again">Different funny stat</button>
+    </div>`, {
+    sheet: true,
+    onClick: e => {
+      const act = e.target.closest('[data-act]')?.dataset.act;
+      if (!act || !cardBlob) return;
+      if (act === 'save') saveCard();
+      if (act === 'again') { cardIdx++; refreshCard(ov); }
+      if (act === 'share') {
+        const f = new File([cardBlob], cardName(), {type: 'image/png'});
+        if (navigator.canShare?.({files: [f]})) navigator.share({files: [f], text: `Krillion crew stats 🦐 ${siteUrl()}`}).catch(err => { if (err.name !== 'AbortError') saveCard(); });
+        else saveCard();
+      }
+    },
+    onClose: () => { if (cardUrl) URL.revokeObjectURL(cardUrl); cardUrl = null; cardBlob = null; }
+  });
+  refreshCard(ov);
+});
 
 /* =====================================================================
    SETTINGS
